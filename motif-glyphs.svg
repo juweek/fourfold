@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 16">
+
+<g transform="translate(0,0)" style="color:#8B7CF6"><g id="gl-w"><circle cx="3.5" cy="11.5" r="1.6" fill="currentColor"></circle><circle cx="8.5" cy="4.5" r="1.9" fill="currentColor"></circle><circle cx="13" cy="10" r="1.4" fill="currentColor"></circle><path d="M3.5,11.5 L8.5,4.5 L13,10" stroke="currentColor" stroke-width="1" fill="none" opacity=".55"></path></g></g>
+<g transform="translate(24,0)" style="color:#34C784"><g id="gl-g"><circle cx="8" cy="8" r="5.2" fill="none" stroke="currentColor" stroke-width="2.4" opacity=".4"></circle><path d="M8,2.8 a5.2,5.2 0 0 1 4.9,3.4" fill="none" stroke="currentColor" stroke-width="2.4"></path></g></g>
+<g transform="translate(48,0)" style="color:#E4593D"><g id="gl-b"><path d="M1.5,13.5 L6.5,4 L9.5,9.2 L11.5,6.2 L14.5,13.5 Z" fill="currentColor"></path></g></g>
+<g transform="translate(72,0)" style="color:#D9A441"><g id="gl-f"><path d="M2,13 L6,9 L9,10.5 L14,4.5" stroke="currentColor" stroke-width="1.8" fill="none"></path><circle cx="14" cy="4.5" r="1.6" fill="currentColor"></circle></g></g>
+</svg>

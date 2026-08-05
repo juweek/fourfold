@@ -1,0 +1,33 @@
+{
+  "name": "fourfold",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run sprites && next build --webpack",
+    "start": "next start",
+    "lint": "next lint",
+    "sprites": "node scripts/render-sprites.mjs",
+    "test": "node --test --experimental-strip-types tests/*.test.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.1",
+    "lucide-react": "^0.468.0",
+    "next": "16.3.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "resend": "^4.5.2",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.23",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
