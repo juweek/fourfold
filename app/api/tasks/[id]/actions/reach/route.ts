@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { assertNoError, db } from "@/lib/db";
-import { getSettings } from "@/lib/today";
+import { FOURFOLD_FROM } from "@/lib/email";
 import type { Contact, Task } from "@/lib/types";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -20,10 +20,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "The email is too long to send from this composer." }, { status: 400 });
     }
 
-    const [{ data: taskData, error: taskError }, { data: contactData, error: contactError }, settings] = await Promise.all([
+    const [{ data: taskData, error: taskError }, { data: contactData, error: contactError }] = await Promise.all([
       db().from("tasks").select("*").eq("id", id).single(),
       db().from("contacts").select("*").eq("id", contactId).single(),
-      getSettings(),
     ]);
     assertNoError(taskError);
     assertNoError(contactError);
@@ -43,9 +42,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
     const resend = new Resend(apiKey);
-    const senderEmail = settings.outreach_sender_email || "onboarding@resend.dev";
     const sent = await resend.emails.send({
-      from: `Fourfold <${senderEmail}>`,
+      from: FOURFOLD_FROM,
       to: contact.email,
       subject,
       text: message,

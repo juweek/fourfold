@@ -1,6 +1,6 @@
 import { DOMAIN_META, DOMAINS } from "./domains";
 import { assertNoError, db } from "./db";
-import { domainXpForDate, levelFromXp, scoreTasks, tierFromLevel, xpToReachLevel } from "./scoring";
+import { domainXpForDate, levelFromXp, rolloverPenaltyPoints, scoreTasks, tierFromLevel, xpToReachLevel } from "./scoring";
 import { materializeRecurring } from "./recurring";
 import { archiveCompletedTasks, rolloverOpenTasks } from "./rollover";
 import { addDays, startOfWeek, todayInTz, weekOfSeason } from "./time";
@@ -44,12 +44,15 @@ export async function getTodayData() {
   const paceXp = 350;
   const progress: DomainProgress[] = DOMAINS.map((domain) => {
     const domainCompleted = completed.filter((task) => task.domain === domain);
-    const completionDates = [...new Set(domainCompleted.map((task) => task.task_date))];
-    const xp = completionDates.reduce((sum, completionDate) => sum + domainXpForDate(allTasks, domain, completionDate).xp, 0);
+    const grossXp = domainCompleted.reduce((sum, task) => sum + task.points * 10, 0);
+    const penaltyXp = allTasks.filter((task) => task.domain === domain)
+      .reduce((sum, task) => sum + rolloverPenaltyPoints(task.points, task.rollover_count) * 10, 0);
+    const xp = Math.max(0, Number((grossXp - penaltyXp).toFixed(2)));
     const level = levelFromXp(xp);
     const todayXp = domainXpForDate(allTasks, domain, date);
-    const weekXp = completionDates.filter((completionDate) => completionDate >= weekStart && completionDate <= date)
-      .reduce((sum, completionDate) => sum + domainXpForDate(allTasks, domain, completionDate).xp, 0);
+    const weekDates: string[] = [];
+    for (let cursor = weekStart; cursor <= date; cursor = addDays(cursor, 1)) weekDates.push(cursor);
+    const weekXp = weekDates.reduce((sum, day) => sum + domainXpForDate(allTasks, domain, day).xp, 0);
     return {
       domain,
       state: todayXp.grossXp === 0 ? "resting" : creatureState(domainCompleted, date, weekXp, paceXp),
@@ -59,9 +62,6 @@ export async function getTodayData() {
       levelStartXp: xpToReachLevel(level),
       nextLevelXp: level === 10 ? 9000 : xpToReachLevel(level + 1),
       todayXp: todayXp.xp,
-      todayGrossXp: todayXp.grossXp,
-      todayPenaltyPercent: todayXp.penaltyPercent,
-      overdueQuests: todayXp.overdueQuests,
       weekXp,
       paceXp,
     };

@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { DOMAIN_META, DOMAINS } from "./domains";
 import { assertNoError, db } from "./db";
+import { FOURFOLD_FROM } from "./email";
 import { getTodayData } from "./today";
 import { dateInTz } from "./time";
 
@@ -55,7 +56,7 @@ export async function sendBriefing({ scheduled = false }: { scheduled?: boolean 
   const resend = new Resend(apiKey);
   try {
     const result = await resend.emails.send({
-      from: "Fourfold <onboarding@resend.dev>",
+      from: FOURFOLD_FROM,
       to: data.settings.recipient_email,
       subject: `Fourfold — ${dateInTz(data.date, data.settings.timezone, { weekday: "long" })}: ${data.tasks.filter((task) => !task.completed_at).length} tasks`,
       html,

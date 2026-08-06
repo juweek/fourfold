@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { assertNoError, db } from "@/lib/db";
+import { FOURFOLD_SENDER_EMAIL } from "@/lib/email";
 import { getSettings } from "@/lib/today";
 
 export async function GET() {
@@ -14,12 +15,12 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    if (!/^\S+@\S+\.\S+$/.test(body.recipient_email ?? "") || !/^\S+@\S+\.\S+$/.test(body.outreach_sender_email ?? "")) {
-      return NextResponse.json({ error: "Enter valid briefing and outreach email addresses." }, { status: 400 });
+    if (!/^\S+@\S+\.\S+$/.test(body.recipient_email ?? "")) {
+      return NextResponse.json({ error: "Enter a valid briefing email address." }, { status: 400 });
     }
     const updates = {
       recipient_email: body.recipient_email.trim(),
-      outreach_sender_email: body.outreach_sender_email.trim(),
+      outreach_sender_email: FOURFOLD_SENDER_EMAIL,
       send_time: body.send_time,
       timezone: body.timezone,
       auto_send: Boolean(body.auto_send),

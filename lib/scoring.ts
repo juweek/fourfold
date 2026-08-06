@@ -5,28 +5,27 @@ export function taskPoints(difficulty: Difficulty, importance: Importance) {
   return DIFFICULTY_POINTS[difficulty] * IMPORTANCE_MULTIPLIER[importance];
 }
 
-export function rolloverPenaltyPercent(daysOverdue: number) {
-  return Math.min(100, Math.max(0, Math.floor(daysOverdue)) * 20);
-}
-
 type XpTask = Pick<Task, "domain" | "points" | "completed_at" | "task_date" | "original_task_date" | "rollover_count">;
 
 function daysBetween(from: string, to: string) {
   return Math.max(0, Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000));
 }
 
-export function taskPenalizesXpOnDate(task: XpTask, date: string) {
+export function rolloverPenaltyPoints(taskPoints: number, overdueDays: number) {
+  return Number((taskPoints * 0.2 * Math.max(0, Math.floor(overdueDays))).toFixed(2));
+}
+
+export function taskHasRolloverPenaltyOnDate(task: XpTask, date: string) {
   if (task.rollover_count <= 0 || task.original_task_date >= date || task.task_date < date) return false;
-  return !(task.completed_at && task.task_date === date);
+  return daysBetween(task.original_task_date, date) <= task.rollover_count;
 }
 
 export function domainXpForDate(tasks: XpTask[], domain: Domain, date: string) {
   const completed = tasks.filter((task) => task.domain === domain && task.completed_at && task.task_date === date);
   const grossXp = completed.reduce((sum, task) => sum + task.points * 10, 0);
-  const overdue = tasks.filter((task) => task.domain === domain && taskPenalizesXpOnDate(task, date));
-  const penaltyPercent = Math.min(100, overdue.reduce((sum, task) => sum + rolloverPenaltyPercent(daysBetween(task.original_task_date, date)), 0));
-  const xp = Number((grossXp * (1 - penaltyPercent / 100)).toFixed(2));
-  return { xp, grossXp, penaltyPercent, overdueQuests: overdue.length };
+  const penalized = tasks.filter((task) => task.domain === domain && taskHasRolloverPenaltyOnDate(task, date));
+  const penaltyXp = Number((penalized.reduce((sum, task) => sum + task.points * 0.2, 0) * 10).toFixed(2));
+  return { xp: Number((grossXp - penaltyXp).toFixed(2)), grossXp, penaltyXp };
 }
 
 export function scoreTasks(tasks: Pick<Task, "points" | "is_bonus" | "completed_at">[]): Score {

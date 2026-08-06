@@ -73,9 +73,6 @@ export type DomainProgress = {
   levelStartXp: number;
   nextLevelXp: number;
   todayXp: number;
-  todayGrossXp: number;
-  todayPenaltyPercent: number;
-  overdueQuests: number;
   weekXp: number;
   paceXp: number;
 };

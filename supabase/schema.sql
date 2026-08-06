@@ -3,7 +3,7 @@ create extension if not exists pgcrypto;
 create table if not exists settings (
   id int primary key default 1 check (id = 1),
   recipient_email text not null default 'hello@juweek.studio',
-  outreach_sender_email text not null default 'onboarding@resend.dev',
+  outreach_sender_email text not null default 'hello@juweek.studio',
   send_time time not null default '07:00',
   timezone text not null default 'America/New_York',
   auto_send boolean not null default true,

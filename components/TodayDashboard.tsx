@@ -38,12 +38,14 @@ function withTasks(current: TodayData, tasks: Task[]): TodayData {
 }
 
 function TaskMetaLine({ task }: { task: Task }) {
-  const penalty = Math.min(100, task.rollover_count * 20);
   return <span style={{ color: DOMAIN_META[task.domain].light }}>
     <MotifGlyph domain={task.domain}/>{DOMAIN_META[task.domain].label}
     {task.action_type === "reach" && <><i>·</i><Mail size={10}/> Reach</>}
-    {task.rollover_count > 0 && <em className="rollover-tag">Day {task.rollover_count + 1} · −{penalty}% XP</em>}
   </span>;
+}
+
+function signedXp(value: number) {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 export function TodayDashboard() {
@@ -259,7 +261,7 @@ export function TodayDashboard() {
                 <button className="quest-check" onClick={() => task.action_type === "reach" ? setActing(task) : toggleTask(task)} disabled={pending || Boolean(task.action_type && task.completed_at)} aria-label={task.action_type === "reach" ? (task.completed_at ? `Email sent for ${task.title}` : `Open email action for ${task.title}`) : (task.completed_at ? `Mark ${task.title} incomplete` : `Complete ${task.title}`)}><span/></button>
                 {task.action_type === "reach" ? <button type="button" className="task-main task-action-trigger" onClick={() => setActing(task)} disabled={pending || Boolean(task.completed_at)} aria-label={`Open email action for ${task.title}`}><strong>{task.title}</strong><TaskMetaLine task={task}/></button> : <div className="task-main"><strong>{task.title}</strong><TaskMetaLine task={task}/></div>}
                 <span className="task-chip">{task.difficulty[0].toUpperCase()} · {task.importance[0].toUpperCase()}</span>
-                <span className="points-badge" title={task.rollover_count > 0 ? "Full quest points are still awarded when completed." : undefined}>{task.points}</span>
+                <span className="points-badge">{task.points}</span>
                 <div className="task-menu"><button className="icon-button small" disabled={pending} onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => { setEditing(task); setMenuFor(null); }}>Edit</button><button onClick={() => duplicateTask(task)}><Copy size={13}/>Duplicate</button><button onClick={() => makeDaily(task)}><Repeat size={13}/>Make daily</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
               </div></div>;
             }) : <div className="empty-state"><span>✦</span><h3>No quests today.</h3><p>Add one above, or draw from the Task Bank.</p><a className="ghost-button" href="/bank">Open Task Bank</a></div>}</div>
@@ -280,8 +282,7 @@ export function TodayDashboard() {
               return <button type="button" className={`character-card card ${filter === item.domain ? "active" : ""}`} key={item.domain} style={{ "--domain": meta.color, "--domain-light": meta.light } as React.CSSProperties} onClick={() => filterFromCharacter(item.domain)} aria-pressed={filter === item.domain} aria-label={`Filter quests by ${meta.label}`}>
                 <CreaturePortrait creature={meta.creature} state={item.state} width={spriteWidth} paused={taskInteractionActive}/>
                 <div className="character-info"><div><h3>{meta.name}</h3><span>{meta.className}</span></div><b>Lv {item.level}</b><div className="xp-track"><i style={{ width: `${progressPercent(item)}%` }}/></div><small>{item.xp} / {item.nextLevelXp} XP</small></div>
-                <div className="micro-progress"><span>T <b>+{item.todayXp}</b><i><em style={{ width: `${Math.min(100, item.todayXp / 1.2)}%` }}/></i></span><span>W <b>+{item.weekXp}</b><i><em style={{ width: `${Math.min(100, item.weekXp / item.paceXp * 100)}%` }}/></i></span></div>
-                {item.todayPenaltyPercent > 0 && <span className="xp-penalty-note">−{item.todayPenaltyPercent}% today · {item.overdueQuests} overdue</span>}
+                <div className="micro-progress"><span>T <b>{signedXp(item.todayXp)}</b><i><em style={{ width: `${Math.max(0, Math.min(100, item.todayXp / 1.2))}%` }}/></i></span><span>W <b>{signedXp(item.weekXp)}</b><i><em style={{ width: `${Math.max(0, Math.min(100, item.weekXp / item.paceXp * 100))}%` }}/></i></span></div>
               </button>;
             })}
           </div>

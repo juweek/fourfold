@@ -529,7 +529,6 @@ window.CreatureLab4 = (function () {
         pl(ring(ax, ay, 3 + r() * 2.2, 3 + r() * 2.2, null, 5), i % 3 === 0 ? 'gold' : 'c7', 8, 'sig', { mat: 'flat', op: (.4 + joy * .55).toFixed(2) });
         if (i % 3 === 1) pl(ribbon([[ax + 3, ay], [ax + 3, ay - 9]], 1.1, 1.1), i % 2 ? 'gold' : 'c7', 8, 'sig', { mat: 'flat', op: (.5 + joy * .4).toFixed(2) });
       }
-      if (joy > .45) glow(109, 119, 104, 'gold', (joy - .45) * 1.05, 8);
     }
 
     /* ====================== RECLINING BEAVER ENGINEER ====================== */
@@ -697,7 +696,7 @@ window.CreatureLab4 = (function () {
       return { t: 'g', a: { id: uid + '-' + gname, 'data-creature': key, 'data-group': gname, 'data-surface': 'faceted' }, k: uid + 'G' + gname, c: kids };
     }
 
-    if (v.aura > .1) nodes.push({ t: 'ellipse', k: uid + 'aura', a: { cx: 110, cy: 152, rx: 108, ry: 120, fill: glowGrad(defs, uid, C.glow), opacity: (v.aura * .26).toFixed(3) } });
+    if (key !== 'panda' && v.aura > .1) nodes.push({ t: 'ellipse', k: uid + 'aura', a: { cx: 110, cy: 152, rx: 108, ry: 120, fill: glowGrad(defs, uid, C.glow), opacity: (v.aura * .26).toFixed(3) } });
     for (gi = 0; gi < GROUPS.length; gi++) if (g[GROUPS[gi]] && g[GROUPS[gi]].length) nodes.push(emit(g[GROUPS[gi]], GROUPS[gi]));
     return { defs: defs, nodes: nodes, w: W, h: H };
   }
@@ -781,7 +780,7 @@ window.CreatureLab4 = (function () {
       return { t: 'g', a: { id: uid + '-' + gname, 'data-creature': key, 'data-group': gname, 'data-surface': 'ink-spore' }, k: uid + 'G' + gname, c: kids };
     }
 
-    if (v.aura > .12 && hi) nodes.push({ t: 'ellipse', k: uid + 'aura', a: { cx: 110, cy: 153, rx: key === 'panda' ? 111 : 104, ry: 117, fill: glowGrad(defs, uid, C.glow), opacity: (v.aura * .2).toFixed(3) } });
+    if (key !== 'panda' && v.aura > .12 && hi) nodes.push({ t: 'ellipse', k: uid + 'aura', a: { cx: 110, cy: 153, rx: 104, ry: 117, fill: glowGrad(defs, uid, C.glow), opacity: (v.aura * .2).toFixed(3) } });
     for (gi = 0; gi < GROUPS.length; gi++) if (g[GROUPS[gi]] && g[GROUPS[gi]].length) nodes.push(emit(g[GROUPS[gi]], GROUPS[gi]));
 
     // Surface-level spores keep the treatment coherent even on creatures whose
