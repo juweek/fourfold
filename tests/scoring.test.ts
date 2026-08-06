@@ -43,22 +43,30 @@ test("XP aggregation includes the Happy Life path", () => {
   assert.deepEqual(totals, { work: 40, gourmet: 0, body: 0, finance: 0, life: 60 });
 });
 
-test("each overdue day deducts 20 percent of that quest's value", () => {
-  assert.equal(rolloverPenaltyPoints(10, 1), 2);
-  assert.equal(rolloverPenaltyPoints(10, 2), 4);
+test("the first rollover day is free before quest-specific deductions begin", () => {
+  assert.equal(rolloverPenaltyPoints(10, 1), 0);
+  assert.equal(rolloverPenaltyPoints(10, 2), 2);
+  assert.equal(rolloverPenaltyPoints(10, 3), 4);
   const tasks = [
     { domain: "work" as const, points: 6, completed_at: null, task_date: "2026-08-06", original_task_date: "2026-08-05", rollover_count: 1 },
     { domain: "work" as const, points: 4, completed_at: "now", task_date: "2026-08-06", original_task_date: "2026-08-06", rollover_count: 0 },
   ];
-  assert.deepEqual(domainXpForDate(tasks, "work", "2026-08-06"), { xp: 28, grossXp: 40, penaltyXp: 12 });
+  assert.deepEqual(domainXpForDate(tasks, "work", "2026-08-06"), { xp: 40, grossXp: 40, penaltyXp: 0 });
   assert.equal(tasks[0].points, 6);
 });
 
-test("a rolled quest grants its full reward while retaining its separate overdue deduction", () => {
+test("a quest completed on its first rollover day grants its full reward without a deduction", () => {
   const tasks = [
     { domain: "life" as const, points: 6, completed_at: "now", task_date: "2026-08-06", original_task_date: "2026-08-05", rollover_count: 1 },
   ];
-  assert.deepEqual(domainXpForDate(tasks, "life", "2026-08-06"), { xp: 48, grossXp: 60, penaltyXp: 12 });
+  assert.deepEqual(domainXpForDate(tasks, "life", "2026-08-06"), { xp: 60, grossXp: 60, penaltyXp: 0 });
+});
+
+test("a quest begins its separate 20 percent deduction on the third calendar day", () => {
+  const tasks = [
+    { domain: "life" as const, points: 6, completed_at: "now", task_date: "2026-08-07", original_task_date: "2026-08-05", rollover_count: 2 },
+  ];
+  assert.deepEqual(domainXpForDate(tasks, "life", "2026-08-07"), { xp: 48, grossXp: 60, penaltyXp: 12 });
 });
 
 test("daily quests do not create rollover deductions", () => {

@@ -12,12 +12,14 @@ function daysBetween(from: string, to: string) {
 }
 
 export function rolloverPenaltyPoints(taskPoints: number, overdueDays: number) {
-  return Number((taskPoints * 0.2 * Math.max(0, Math.floor(overdueDays))).toFixed(2));
+  const penaltyDays = Math.max(0, Math.floor(overdueDays) - 1);
+  return Number((taskPoints * 0.2 * penaltyDays).toFixed(2));
 }
 
 export function taskHasRolloverPenaltyOnDate(task: XpTask, date: string) {
-  if (task.rollover_count <= 0 || task.original_task_date >= date || task.task_date < date) return false;
-  return daysBetween(task.original_task_date, date) <= task.rollover_count;
+  const overdueDays = daysBetween(task.original_task_date, date);
+  if (task.rollover_count < 2 || overdueDays < 2 || task.task_date < date) return false;
+  return overdueDays <= task.rollover_count;
 }
 
 export function domainXpForDate(tasks: XpTask[], domain: Domain, date: string) {
