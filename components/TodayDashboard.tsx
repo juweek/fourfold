@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, History, MoreHorizontal, Plane, RefreshCw, Repeat } from "lucide-react";
 import { DOMAIN_META, DOMAINS } from "@/lib/domains";
+import { scoreTasks } from "@/lib/scoring";
 import type { Difficulty, Domain, DomainProgress, Importance, Score, Settings, Task } from "@/lib/types";
 import { CreaturePortrait } from "./CreaturePortrait";
 import { GardenScene } from "./GardenScene";
@@ -31,6 +32,10 @@ function progressPercent(item: DomainProgress) {
   return Math.max(0, Math.min(100, ((item.xp - item.levelStartXp) / (item.nextLevelXp - item.levelStartXp)) * 100));
 }
 
+function withTasks(current: TodayData, tasks: Task[]): TodayData {
+  return { ...current, tasks, score: scoreTasks(tasks) };
+}
+
 export function TodayDashboard() {
   const [data, setData] = useState<TodayData | null>(null);
   const [error, setError] = useState("");
@@ -43,7 +48,10 @@ export function TodayDashboard() {
   const [pulse, setPulse] = useState(false);
   const [toast, setToast] = useState("");
   const [adding, setAdding] = useState(false);
+  const [pendingTaskIds, setPendingTaskIds] = useState<Set<string>>(() => new Set());
   const taskListRef = useRef<HTMLElement>(null);
+  const pendingTaskIdsRef = useRef(new Set<string>());
+  const refreshTimerRef = useRef<number | null>(null);
   const [quick, setQuick] = useState<{ title: string; domain: Domain; difficulty: Difficulty; importance: Importance }>({ title: "", domain: "work", difficulty: "medium", importance: "medium" });
 
   const load = useCallback(async () => {
@@ -57,8 +65,40 @@ export function TodayDashboard() {
     }
   }, []);
 
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+    const refreshWhenIdle = () => {
+      if (pendingTaskIdsRef.current.size > 0) {
+        refreshTimerRef.current = window.setTimeout(refreshWhenIdle, 250);
+        return;
+      }
+      refreshTimerRef.current = null;
+      void load();
+    };
+    refreshTimerRef.current = window.setTimeout(refreshWhenIdle, 700);
+  }, [load]);
+
+  function setTaskPending(id: string, pending: boolean) {
+    if (pending) pendingTaskIdsRef.current.add(id);
+    else pendingTaskIdsRef.current.delete(id);
+    setPendingTaskIds(new Set(pendingTaskIdsRef.current));
+  }
+
+  function replaceLocalTask(task: Task) {
+    setData((current) => current ? withTasks(current, current.tasks.map((item) => item.id === task.id ? task : item)) : current);
+  }
+
+  function removeLocalTask(id: string) {
+    setData((current) => current ? withTasks(current, current.tasks.filter((item) => item.id !== id)) : current);
+  }
+
+  function appendLocalTask(task: Task) {
+    setData((current) => current ? withTasks(current, current.tasks.some((item) => item.id === task.id) ? current.tasks : [...current.tasks, task]) : current);
+  }
+
   useEffect(() => { load(); const saved = window.localStorage.getItem("ff_last_domain") as Domain | null; if (saved && DOMAINS.includes(saved)) setQuick((value) => ({ ...value, domain: saved })); }, [load]);
   useEffect(() => { if (!toast) return; const timeout = window.setTimeout(() => setToast(""), 3500); return () => window.clearTimeout(timeout); }, [toast]);
+  useEffect(() => () => { if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current); }, []);
 
   const visibleTasks = useMemo(() => {
     if (!data) return [];
@@ -68,39 +108,92 @@ export function TodayDashboard() {
   async function addTask(event: React.FormEvent) {
     event.preventDefault();
     if (!quick.title.trim()) return;
+    const draft = { ...quick, title: quick.title.trim() };
     setAdding(true);
-    const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(quick) });
-    setAdding(false);
-    if (!response.ok) { setToast((await response.json()).error ?? "Could not add task."); return; }
-    window.localStorage.setItem("ff_last_domain", quick.domain);
-    setQuick({ ...quick, title: "" });
-    setToast("Quest added to today.");
-    await load();
+    setQuick((current) => ({ ...current, title: "" }));
+    try {
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(draft) });
+      if (!response.ok) throw new Error((await response.json()).error ?? "Could not add task.");
+      const created = await response.json() as Task;
+      appendLocalTask(created);
+      window.localStorage.setItem("ff_last_domain", draft.domain);
+      setToast("Quest added to today.");
+      scheduleRefresh();
+    } catch (reason) {
+      setQuick((current) => current.title ? current : { ...draft });
+      setToast(reason instanceof Error ? reason.message : "Could not add task.");
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function toggleTask(task: Task) {
-    const response = await fetch(`/api/tasks/${task.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ complete: !task.completed_at }) });
-    if (!response.ok) { setToast("Could not update the quest."); return; }
-    setPulse(true); window.setTimeout(() => setPulse(false), 200);
-    await load();
+    if (pendingTaskIdsRef.current.has(task.id)) return;
+    const completing = !task.completed_at;
+    const optimistic = { ...task, completed_at: completing ? new Date().toISOString() : null };
+    setTaskPending(task.id, true);
+    replaceLocalTask(optimistic);
+    if (completing) { setPulse(true); window.setTimeout(() => setPulse(false), 200); }
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ complete: completing }) });
+      if (!response.ok) throw new Error("Could not update the quest.");
+      replaceLocalTask(await response.json() as Task);
+      scheduleRefresh();
+    } catch {
+      replaceLocalTask(task);
+      setToast("Could not update the quest.");
+    } finally {
+      setTaskPending(task.id, false);
+    }
   }
 
-  async function deleteTask(id: string) {
-    const response = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-    if (!response.ok) { setToast("Could not delete the quest."); return; }
-    setMenuFor(null); setConfirmDelete(null); setToast("Quest deleted."); await load();
+  async function deleteTask(task: Task) {
+    if (pendingTaskIdsRef.current.has(task.id)) return;
+    setTaskPending(task.id, true);
+    setMenuFor(null); setConfirmDelete(null); removeLocalTask(task.id);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Could not delete the quest.");
+      setToast("Quest deleted.");
+      scheduleRefresh();
+    } catch {
+      appendLocalTask(task);
+      setToast("Could not delete the quest.");
+    } finally {
+      setTaskPending(task.id, false);
+    }
   }
 
   async function duplicateTask(task: Task) {
-    const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance }) });
-    if (!response.ok) { setToast((await response.json()).error ?? "Could not duplicate the quest."); return; }
-    setMenuFor(null); setToast("Quest duplicated for today."); await load();
+    if (pendingTaskIdsRef.current.has(task.id)) return;
+    setTaskPending(task.id, true);
+    setMenuFor(null);
+    try {
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance }) });
+      if (!response.ok) throw new Error((await response.json()).error ?? "Could not duplicate the quest.");
+      appendLocalTask(await response.json() as Task);
+      setToast("Quest duplicated for today.");
+      scheduleRefresh();
+    } catch (reason) {
+      setToast(reason instanceof Error ? reason.message : "Could not duplicate the quest.");
+    } finally {
+      setTaskPending(task.id, false);
+    }
   }
 
   async function makeDaily(task: Task) {
-    const response = await fetch(`/api/tasks/${task.id}/daily`, { method: "POST" });
-    if (!response.ok) { setToast((await response.json()).error ?? "Could not make this quest daily."); return; }
-    setMenuFor(null); setToast("Daily quest enabled. It will appear once each day.");
+    if (pendingTaskIdsRef.current.has(task.id)) return;
+    setTaskPending(task.id, true);
+    setMenuFor(null);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/daily`, { method: "POST" });
+      if (!response.ok) throw new Error((await response.json()).error ?? "Could not make this quest daily.");
+      setToast("Daily quest enabled. It will appear once each day.");
+    } catch (reason) {
+      setToast(reason instanceof Error ? reason.message : "Could not make this quest daily.");
+    } finally {
+      setTaskPending(task.id, false);
+    }
   }
 
   function filterFromCharacter(domain: Domain) {
@@ -123,8 +216,9 @@ export function TodayDashboard() {
 
   const openTasks = data.tasks.filter((task) => !task.completed_at);
   const earned = data.score.earnedPlannedPoints + data.score.earnedBonusPoints;
+  const taskInteractionActive = Boolean(menuFor || editing);
   return (
-    <main className="page-shell today-page">
+    <main className={`page-shell today-page ${taskInteractionActive ? "task-interaction-active" : ""}`}>
       <div className="page-heading today-heading">
         <div><span className="eyebrow">Week {data.week} of 26</span><h1>{new Date(`${data.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h1></div>
         <div className="heading-actions"><button className="ghost-button" onClick={() => setHistoryOpen(true)}><History size={16}/> History</button><button className="icon-button" onClick={sendBriefing} disabled={sending} aria-label="Send briefing">{sending ? <span className="spinner"/> : <Plane size={17}/>}</button></div>
@@ -149,12 +243,13 @@ export function TodayDashboard() {
             <div className="task-list-scroll">{visibleTasks.length ? visibleTasks.map((task, index) => {
               const previous = visibleTasks[index - 1];
               const bonusHeading = task.is_bonus && !previous?.is_bonus;
-              return <div key={task.id}>{bonusHeading && <div className="bonus-divider"><span>Bonus</span></div>}<div className={`task-row ${task.completed_at ? "completed" : ""}`}>
-                <button className="quest-check" onClick={() => toggleTask(task)} aria-label={task.completed_at ? `Mark ${task.title} incomplete` : `Complete ${task.title}`}><span/></button>
+              const pending = pendingTaskIds.has(task.id);
+              return <div key={task.id}>{bonusHeading && <div className="bonus-divider"><span>Bonus</span></div>}<div className={`task-row ${task.completed_at ? "completed" : ""} ${pending ? "pending" : ""}`} aria-busy={pending}>
+                <button className="quest-check" onClick={() => toggleTask(task)} disabled={pending} aria-label={task.completed_at ? `Mark ${task.title} incomplete` : `Complete ${task.title}`}><span/></button>
                 <div className="task-main"><strong>{task.title}</strong><span style={{ color: DOMAIN_META[task.domain].light }}><MotifGlyph domain={task.domain}/>{DOMAIN_META[task.domain].label}</span></div>
                 <span className="task-chip">{task.difficulty[0].toUpperCase()} · {task.importance[0].toUpperCase()}</span>
                 <span className="points-badge">{task.points}</span>
-                <div className="task-menu"><button className="icon-button small" onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => { setEditing(task); setMenuFor(null); }}>Edit</button><button onClick={() => duplicateTask(task)}><Copy size={13}/>Duplicate</button><button onClick={() => makeDaily(task)}><Repeat size={13}/>Make daily</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task.id) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
+                <div className="task-menu"><button className="icon-button small" disabled={pending} onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => { setEditing(task); setMenuFor(null); }}>Edit</button><button onClick={() => duplicateTask(task)}><Copy size={13}/>Duplicate</button><button onClick={() => makeDaily(task)}><Repeat size={13}/>Make daily</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
               </div></div>;
             }) : <div className="empty-state"><span>✦</span><h3>No quests today.</h3><p>Add one above, or draw from the Task Bank.</p><a className="ghost-button" href="/bank">Open Task Bank</a></div>}</div>
           </section>
@@ -165,14 +260,14 @@ export function TodayDashboard() {
             <ScoreRing score={data.score} pulse={pulse}/>
             <div><span className="eyebrow">Today&apos;s score</span><h2>{earned} / {data.score.plannedPoints} pts</h2><p>{data.score.earnedBonusPoints ? `+${data.score.earnedBonusPoints} bonus · ` : ""}{openTasks.length} quests remain</p></div>
           </section>
-          <GardenScene progress={data.progress}/>
+          <GardenScene progress={data.progress} paused={taskInteractionActive}/>
           <section className="today-radar-card card"><div><span className="eyebrow">Today&apos;s balance</span><h2>Tasks done</h2><p>Completed quests across the five paths.</p></div><RadarChart values={completedTaskValues(data.tasks)} label="Today" /></section>
           <div className="character-grid">
             {data.progress.map((item) => {
               const meta = DOMAIN_META[item.domain];
               const spriteWidth = item.domain === "gourmet" ? 44 : item.domain === "life" ? 76 : item.domain === "work" ? 64 : 58;
               return <button type="button" className={`character-card card ${filter === item.domain ? "active" : ""}`} key={item.domain} style={{ "--domain": meta.color, "--domain-light": meta.light } as React.CSSProperties} onClick={() => filterFromCharacter(item.domain)} aria-pressed={filter === item.domain} aria-label={`Filter quests by ${meta.label}`}>
-                <CreaturePortrait creature={meta.creature} state={item.state} width={spriteWidth}/>
+                <CreaturePortrait creature={meta.creature} state={item.state} width={spriteWidth} paused={taskInteractionActive}/>
                 <div className="character-info"><div><h3>{meta.name}</h3><span>{meta.className}</span></div><b>Lv {item.level}</b><div className="xp-track"><i style={{ width: `${progressPercent(item)}%` }}/></div><small>{item.xp} / {item.nextLevelXp} XP</small></div>
                 <div className="micro-progress"><span>T <b>+{item.todayXp}</b><i><em style={{ width: `${Math.min(100, item.todayXp / 1.2)}%` }}/></i></span><span>W <b>+{item.weekXp}</b><i><em style={{ width: `${Math.min(100, item.weekXp / item.paceXp * 100)}%` }}/></i></span></div>
               </button>;
@@ -180,7 +275,14 @@ export function TodayDashboard() {
           </div>
         </aside>
       </div>
-      {editing && <TaskSheet task={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); setToast("Quest updated."); load(); }} onDeleted={() => { setEditing(null); setToast("Quest deleted."); load(); }}/>} 
+      {editing && (
+        <TaskSheet
+          task={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(task) => { replaceLocalTask(task); setEditing(null); setToast("Quest updated."); scheduleRefresh(); }}
+          onDeleted={(id) => { removeLocalTask(id); setEditing(null); setToast("Quest deleted."); scheduleRefresh(); }}
+        />
+      )}
       {historyOpen && <HistoryModal onClose={() => setHistoryOpen(false)}/>} 
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>

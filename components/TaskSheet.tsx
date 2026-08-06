@@ -6,7 +6,7 @@ import type { Difficulty, Domain, Importance, Task } from "@/lib/types";
 import { MotifGlyph } from "./MotifGlyph";
 import { PillSelector } from "./PillSelector";
 
-export function TaskSheet({ task, onClose, onSaved, onDeleted }: { task: Task; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
+export function TaskSheet({ task, onClose, onSaved, onDeleted }: { task: Task; onClose: () => void; onSaved: (task: Task) => void; onDeleted: (id: string) => void }) {
   const [form, setForm] = useState({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance, task_date: task.task_date });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -19,15 +19,26 @@ export function TaskSheet({ task, onClose, onSaved, onDeleted }: { task: Task; o
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true); setError("");
-    const response = await fetch(`/api/tasks/${task.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    if (!response.ok) { setError((await response.json()).error ?? "Could not save."); setSaving(false); return; }
-    onSaved();
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (!response.ok) throw new Error((await response.json()).error ?? "Could not save.");
+      onSaved(await response.json() as Task);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save.");
+      setSaving(false);
+    }
   }
 
   async function remove() {
     setSaving(true);
-    const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
-    if (response.ok) onDeleted(); else { setError("Could not delete the task."); setSaving(false); }
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Could not delete the task.");
+      onDeleted(task.id);
+    } catch {
+      setError("Could not delete the task.");
+      setSaving(false);
+    }
   }
 
   return (

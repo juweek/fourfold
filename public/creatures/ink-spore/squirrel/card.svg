@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250" width="220" height="250" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-ink-spore-squirrel-radiant-lo desc-ink-spore-squirrel-radiant-lo" data-creature="squirrel" data-surface="ink-spore" data-state="radiant" data-tier="3" data-detail="lo">
+<svg id="motion-paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250" width="220" height="250" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-ink-spore-squirrel-radiant-lo desc-ink-spore-squirrel-radiant-lo" data-creature="squirrel" data-surface="ink-spore" data-state="radiant" data-tier="3" data-detail="lo">
 <title id="title-ink-spore-squirrel-radiant-lo">Squirrel Summoner — radiant Ink &amp; Spore</title>
 <desc id="desc-ink-spore-squirrel-radiant-lo">Fourfold generative creature sprite. Fixed 220 by 250 viewBox; transparent background.</desc>
 <metadata>{&quot;creature&quot;:&quot;squirrel&quot;,&quot;name&quot;:&quot;Squirrel Summoner&quot;,&quot;surface&quot;:&quot;ink-spore&quot;,&quot;state&quot;:&quot;radiant&quot;,&quot;detail&quot;:&quot;lo&quot;,&quot;tier&quot;:3,&quot;seed&quot;:&quot;fourfold-r4|squirrel|card&quot;,&quot;inputs&quot;:{&quot;momentum&quot;:0.95,&quot;vitality&quot;:0.95,&quot;volatility&quot;:0.18,&quot;streak&quot;:18,&quot;neglect&quot;:0,&quot;level&quot;:9,&quot;seed&quot;:&quot;fourfold-r4|squirrel|card&quot;}}</metadata>
 <style>
 [data-group="tail"]{transform-box:view-box;transform-origin:138px 212px;will-change:transform;animation:ff-tail-sway 3.2s ease-in-out infinite}
+:root:target [data-group="tail"]{animation-play-state:paused}
 @keyframes ff-tail-sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){[data-group="tail"]{animation:none}}
 </style>

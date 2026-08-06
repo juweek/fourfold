@@ -14,7 +14,7 @@ function healthLabel(xp: number, pace: number) {
   return "resting";
 }
 
-export function GardenScene({ progress, expanded = false }: { progress: DomainProgress[]; expanded?: boolean }) {
+export function GardenScene({ progress, expanded = false, paused = false }: { progress: DomainProgress[]; expanded?: boolean; paused?: boolean }) {
   const byDomain = Object.fromEntries(progress.map((item) => [item.domain, item])) as Record<string, DomainProgress>;
   const states = {
     beaver: byDomain.work?.state ?? "steady",
@@ -49,7 +49,7 @@ export function GardenScene({ progress, expanded = false }: { progress: DomainPr
           );
         })}
       </div>
-      <PartyPortrait states={states} className="garden-party" />
+      <PartyPortrait states={states} className="garden-party" paused={paused} />
       <div className="garden-labels">
         {DOMAINS.map((domain) => {
           const item = byDomain[domain];

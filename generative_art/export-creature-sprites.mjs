@@ -97,6 +97,7 @@ function motionStyle(key, state) {
 [data-group="wingL"],[data-group="wingR"]{transform-box:view-box;will-change:transform;animation-duration:${flapDuration};animation-timing-function:ease-in-out;animation-iteration-count:infinite}
 [data-group="wingL"]{transform-origin:108px 152px;animation-name:ff-wing-left}
 [data-group="wingR"]{transform-origin:108px 152px;animation-name:ff-wing-right}
+:root:target [data-group="wingL"],:root:target [data-group="wingR"]{animation-play-state:paused}
 @keyframes ff-wing-left{0%,100%{transform:rotate(-2deg) scaleY(1)}50%{transform:rotate(7deg) scaleY(.94)}}
 @keyframes ff-wing-right{0%,100%{transform:rotate(2deg) scaleY(1)}50%{transform:rotate(-7deg) scaleY(.94)}}
 @media (prefers-reduced-motion:reduce){[data-group="wingL"],[data-group="wingR"]{animation:none}}
@@ -106,6 +107,7 @@ function motionStyle(key, state) {
   if (key === "squirrel") {
     return `<style>
 [data-group="tail"]{transform-box:view-box;transform-origin:138px 212px;will-change:transform;animation:ff-tail-sway ${tailDuration} ease-in-out infinite}
+:root:target [data-group="tail"]{animation-play-state:paused}
 @keyframes ff-tail-sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){[data-group="tail"]{animation:none}}
 </style>`;
@@ -119,6 +121,8 @@ function svgDocument({ surface, key, state, detail, vitals, output }) {
   const titleId = `title-${surface}-${key}-${state}-${detail}`;
   const descId = `desc-${surface}-${key}-${state}-${detail}`;
   const defs = output.defs.length ? `<defs>${output.defs.map(nodeToXml).join("")}</defs>` : "";
+  const motion = motionStyle(key, state);
+  const motionTarget = motion ? ' id="motion-paused"' : "";
   const metadata = {
     creature: key,
     name: titleFor(key),
@@ -131,11 +135,11 @@ function svgDocument({ surface, key, state, detail, vitals, output }) {
   };
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${output.w} ${output.h}" width="${output.w}" height="${output.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}" data-creature="${key}" data-surface="${surface}" data-state="${state}" data-tier="${tier}" data-detail="${detail}">`,
+    `<svg${motionTarget} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${output.w} ${output.h}" width="${output.w}" height="${output.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}" data-creature="${key}" data-surface="${surface}" data-state="${state}" data-tier="${tier}" data-detail="${detail}">`,
     `<title id="${titleId}">${escapeXml(titleFor(key))} — ${escapeXml(state)} ${escapeXml(SURFACE_LABELS[surface])}</title>`,
     `<desc id="${descId}">Fourfold generative creature sprite. Fixed 220 by 250 viewBox; transparent background.</desc>`,
     `<metadata>${escapeXml(JSON.stringify(metadata))}</metadata>`,
-    motionStyle(key, state),
+    motion,
     defs,
     output.nodes.map(nodeToXml).join(""),
     "</svg>",

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250" width="220" height="250" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-faceted-bird-radiant-hi desc-faceted-bird-radiant-hi" data-creature="bird" data-surface="faceted" data-state="radiant" data-tier="3" data-detail="hi">
+<svg id="motion-paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250" width="220" height="250" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-faceted-bird-radiant-hi desc-faceted-bird-radiant-hi" data-creature="bird" data-surface="faceted" data-state="radiant" data-tier="3" data-detail="hi">
 <title id="title-faceted-bird-radiant-hi">Eagle Scholar — radiant Faceted</title>
 <desc id="desc-faceted-bird-radiant-hi">Fourfold generative creature sprite. Fixed 220 by 250 viewBox; transparent background.</desc>
 <metadata>{&quot;creature&quot;:&quot;bird&quot;,&quot;name&quot;:&quot;Eagle Scholar&quot;,&quot;surface&quot;:&quot;faceted&quot;,&quot;state&quot;:&quot;radiant&quot;,&quot;detail&quot;:&quot;hi&quot;,&quot;tier&quot;:3,&quot;seed&quot;:&quot;fourfold-r4|bird|radiant&quot;,&quot;inputs&quot;:{&quot;momentum&quot;:0.95,&quot;vitality&quot;:0.95,&quot;volatility&quot;:0.18,&quot;streak&quot;:18,&quot;neglect&quot;:0,&quot;level&quot;:9,&quot;seed&quot;:&quot;fourfold-r4|bird|radiant&quot;}}</metadata>
@@ -7,6 +7,7 @@
 [data-group="wingL"],[data-group="wingR"]{transform-box:view-box;will-change:transform;animation-duration:1.15s;animation-timing-function:ease-in-out;animation-iteration-count:infinite}
 [data-group="wingL"]{transform-origin:108px 152px;animation-name:ff-wing-left}
 [data-group="wingR"]{transform-origin:108px 152px;animation-name:ff-wing-right}
+:root:target [data-group="wingL"],:root:target [data-group="wingR"]{animation-play-state:paused}
 @keyframes ff-wing-left{0%,100%{transform:rotate(-2deg) scaleY(1)}50%{transform:rotate(7deg) scaleY(.94)}}
 @keyframes ff-wing-right{0%,100%{transform:rotate(2deg) scaleY(1)}50%{transform:rotate(-7deg) scaleY(.94)}}
 @media (prefers-reduced-motion:reduce){[data-group="wingL"],[data-group="wingR"]{animation:none}}
