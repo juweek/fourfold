@@ -33,7 +33,7 @@ window.CreatureLab4 = (function () {
     beaver: {
       key: 'beaver', name: 'Beaver Engineer', short: 'Beaver', domain: 'Systems', mood: 'studious',
       c3: '#9DE6D8', c5: '#3EAD98', c7: '#27685E', fur: '#9A6846', furD: '#573A2A',
-      sig: 'open brass gyroscope + vitality gauge; tools and stick field grow with level and streak'
+      sig: 'single brass monocle-goggle; tools and foreground stick field grow with level and streak'
     }
   };
   var ORDER3 = ['squirrel', 'lion', 'bird', 'panda', 'beaver'];
@@ -539,20 +539,20 @@ window.CreatureLab4 = (function () {
       var stickBases = [12, 27, 43, 59, 78, 94, 158, 174, 190, 207];
       pl(ring(112, 229, 91, 8, null, 11), 'shadow', 0, 'back', { mat: 'flat' });
 
-      // A workshop-like twig field grows with level and streak, echoing the squirrel garden.
+      // A workshop-like twig field grows with level and streak and sits in the foreground.
       for (i = 0; i < stickN; i++) {
         var sbx = stickBases[i % stickBases.length] + (r() - .5) * 8;
         var sby = 230 + (r() - .5) * 3;
         var stick = bend(sbx, sby, -Math.PI / 2 + (r() - .5) * .54, 20 + r() * 25, (r() - .5) * .28, 4, r, i, -.025);
-        pl(ribbon(stick, 3.1, 1.15), 'wood', 1, 'back', { mat: 'skin' });
+        pl(ribbon(stick, 3.1, 1.15), 'wood', 9, 'fx', { mat: 'skin' });
         if (FULL || i < 3) {
           var forkAt = stick[Math.min(3, 2 + (i % 2))];
           var fork = bend(forkAt[0], forkAt[1], -1.12 + (i % 2 ? .34 : -.28), 9 + r() * 8, .08, 3, r, i + 9);
-          pl(ribbon(fork, 1.8, .65), i % 3 === 0 ? 'goldD' : 'wood', 1, 'back', { mat: 'skin' });
+          pl(ribbon(fork, 1.8, .65), i % 3 === 0 ? 'goldD' : 'wood', 9, 'fx', { mat: 'skin' });
         }
         if (FULL && i % 2 === 0) {
           var stickTip = stick[stick.length - 1];
-          pl(ring(stickTip[0], stickTip[1], 2.2, 1.35, null, 7), 'boneD', 2, 'back', { mat: 'flat' });
+          pl(ring(stickTip[0], stickTip[1], 2.2, 1.35, null, 7), 'boneD', 10, 'fx', { mat: 'flat' });
         }
       }
 
@@ -569,7 +569,7 @@ window.CreatureLab4 = (function () {
       pl(ribbon([[143, 202], [167, 215]], 17, 12), 'furD', 3, 'lower');
       pl(ring(174, 219, 18, 10, null, 9), 'furD', 4, 'lower');
 
-      // Head, twin goggles and incisors restore the earlier mad-scientist silhouette.
+      // Head, single monocle-goggle and incisors keep the engineer silhouette readable.
       sm(ring(60, 143, 32, 29, null, 12, r, .02), 'fur', 5, 'head');
       pl(ring(42, 121, 9, 9, null, 7), 'furD', 4, 'head');
       pl(ring(72, 117, 9, 9, null, 7), 'furD', 4, 'head');
@@ -579,27 +579,16 @@ window.CreatureLab4 = (function () {
       pl([[45, 157], [54, 158], [52, 169], [45, 169]], 'bone', 7, 'face', { mat: 'flat' });
       pth('M34,156 Q44,161 55,157', 'furD', 7, 'face', { sw: 1.6, fill: false, cap: 'round' });
       eyeParts(P, 51, 140, 6.8, 'studious', v, 1); eyeParts(P, 71, 136, 6.8, 'studious', v, 0);
-      pth('M32,128 Q56,115 82,124', 'goldD', 7, 'head', { sw: 3.2, fill: false, cap: 'round' });
-      pl(ring(48, 127, 10, 8, null, 8), 'c7', 7, 'head', { mat: 'flat', op: .78 });
-      pl(ring(70, 124, 10, 8, null, 8), 'c7', 7, 'head', { mat: 'flat', op: .78 });
-      pl(ring(48, 127, 6.5, 5, null, 8), 'bone', 8, 'face', { mat: 'flat', op: .55, feature: 'eye-detail' });
-      pl(ring(70, 124, 6.5, 5, null, 8), 'bone', 8, 'face', { mat: 'flat', op: .55, feature: 'eye-detail' });
-      pth('M58,126 L60,125', 'goldD', 8, 'face', { sw: 3, fill: false, cap: 'round' });
+      pth('M31,130 Q51,119 82,125', 'goldD', 7, 'head', { sw: 2.8, fill: false, cap: 'round' });
+      pth('M40.5,140 A10.5,8.5 0 1 0 61.5,140 A10.5,8.5 0 1 0 40.5,140', 'c7', 8, 'face', { sw: 3.2, fill: false, cap: 'round' });
+      pl(ring(51, 140, 7.2, 5.5, null, 12), 'bone', 9, 'face', { mat: 'flat', op: .22, feature: 'eye-detail' });
+      pth('M61,137 Q72,151 69,177', 'goldD', 8, 'face', { sw: 2.1, fill: false, cap: 'round' });
 
-      // Forepaws cradle an open brass gyroscope; the prior cyan belly core is intentionally omitted.
+      // Forepaws rest across the belly without an instrument covering the torso.
       pl(ribbon([[78, 155], [102, 142], [116, 145]], 9, 6), 'furD', 6, 'body');
       pl(ring(118, 146, 8, 7, null, 8), 'furD', 7, 'body');
       pl(ribbon([[91, 199], [116, 178], [131, 158]], 9, 6), 'furD', 6, 'body');
       pl(ring(133, 155, 8, 7, null, 8), 'furD', 7, 'body');
-      pth('M106,148 C119,129 149,130 158,149 C166,168 145,184 123,176 C104,169 97,153 106,148 Z', 'goldD', 6, 'sig', { sw: 3.4, fill: false, cap: 'round' });
-      pth('M112,137 C128,151 143,164 158,170 M104,159 C124,158 145,150 159,139', 'gold', 7, 'sig', { sw: 2.1, fill: false, cap: 'round' });
-
-      // Boiler gauge remains the compact vitality read.
-      pl(ring(145, 194, 17, 17, null, 10), 'goldD', 6, 'body');
-      pl(ring(145, 194, 13, 13, null, 10), 'bone', 7, 'body', { mat: 'flat' });
-      var ga = Math.PI * (.82 + .86 * v.input.vitality);
-      pth('M145,194 L' + (145 + Math.cos(ga) * 10).toFixed(1) + ',' + (194 + Math.sin(ga) * 10).toFixed(1), 'c7', 8, 'sig', { sw: 2.1, fill: false, cap: 'round' });
-      pl(ring(145, 194, 2.6, 2.6, null, 6), 'ink', 8, 'sig', { mat: 'flat' });
 
       var tools = [
         'M179,190 L207,218 M181,188 L176,181 M181,188 L188,183 M207,218 L213,216',

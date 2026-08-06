@@ -94,7 +94,7 @@
     "beaver": {
       "name": "Beaver Engineer",
       "domain": "Systems",
-      "signature": "open brass gyroscope + vitality gauge; tools and stick field grow with level and streak",
+      "signature": "single brass monocle-goggle; tools and foreground stick field grow with level and streak",
       "files": {
         "resting": "beaver/resting.svg",
         "radiant": "beaver/radiant.svg",
