@@ -1,6 +1,7 @@
-export type Domain = "work" | "gourmet" | "body" | "finance";
+export type Domain = "work" | "gourmet" | "body" | "finance" | "life";
 export type Difficulty = "easy" | "medium" | "hard";
 export type Importance = "low" | "medium" | "high";
+export type CreatureState = "radiant" | "steady" | "drifting" | "slipping" | "dormant";
 
 export type Task = {
   id: string;
@@ -58,6 +59,7 @@ export type Score = {
 
 export type DomainProgress = {
   domain: Domain;
+  state: CreatureState;
   xp: number;
   level: number;
   tier: 1 | 2 | 3;

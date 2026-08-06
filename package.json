@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "sprites": "node scripts/render-sprites.mjs",
+    "sprites:creature-lab": "node generative_art/export-creature-sprites.mjs",
+    "sprites:ink-spore": "node generative_art/export-ink-spore.mjs",
     "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {

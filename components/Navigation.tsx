@@ -3,6 +3,7 @@
 import { Landmark, ListTodo, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ArtStyleToggle } from "./ArtStyleProvider";
 
 const links = [
   { href: "/", label: "Today", icon: ListTodo },
@@ -16,9 +17,9 @@ export function Navigation() {
     <>
       <header className="site-header">
         <Link href="/" className="wordmark">FOURFOLD</Link>
-        <nav>
+        <div className="header-actions"><nav>
           {links.map(({ href, label }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}>{label}</Link>)}
-        </nav>
+        </nav><ArtStyleToggle /></div>
       </header>
       <nav className="mobile-tabs">
         {links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}><Icon size={19}/><span>{label}</span></Link>)}

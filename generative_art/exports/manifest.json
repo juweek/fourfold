@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "generative_art/export-creature-sprites.mjs",
+  "engine": "generative_art/creature-lab4.js",
+  "viewBox": [
+    0,
+    0,
+    220,
+    250
+  ],
+  "aspectRatio": 0.88,
+  "detailPolicy": {
+    "high": "display width > 90px",
+    "low": "display width <= 90px"
+  },
+  "surfaces": [
+    "faceted",
+    "ink-spore"
+  ],
+  "surfaceLabels": {
+    "faceted": "Faceted",
+    "ink-spore": "Ink & Spore"
+  },
+  "stateOrder": [
+    "radiant",
+    "steady",
+    "drifting",
+    "slipping",
+    "dormant"
+  ],
+  "creatureOrder": [
+    "squirrel",
+    "lion",
+    "bird",
+    "panda",
+    "beaver"
+  ],
+  "pathTemplates": {
+    "state": "{surface}/{creature}/{state}.svg",
+    "card": "{surface}/{creature}/card.svg"
+  },
+  "seedTemplates": {
+    "state": "fourfold-r4|{creature}|{state}",
+    "card": "fourfold-r4|{creature}|card"
+  },
+  "counts": {
+    "surfaces": 2,
+    "creatures": 5,
+    "namedStates": 5,
+    "filesPerCreaturePerSurface": 6,
+    "svg": 60
+  },
+  "manifests": {
+    "faceted": "faceted/manifest.json",
+    "ink-spore": "ink-spore/manifest.json"
+  }
+}

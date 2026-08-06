@@ -1,13 +1,13 @@
 import type { Domain } from "./types";
 
-export const DOMAINS: Domain[] = ["work", "gourmet", "body", "finance"];
+export const DOMAINS: Domain[] = ["work", "gourmet", "body", "finance", "life"];
 
 export const DOMAIN_META = {
   work: {
-    label: "Work",
+    label: "Data",
     name: "Vesper",
-    className: "Data Spellcaster",
-    creature: "panda",
+    className: "Beaver Engineer",
+    creature: "beaver",
     color: "#8B7CF6",
     light: "#B9AEFF",
     dark: "#5E4FB8",
@@ -42,6 +42,16 @@ export const DOMAIN_META = {
     light: "#F2CD7E",
     dark: "#9C742B",
     motif: "rising",
+  },
+  life: {
+    label: "Happy Life",
+    name: "Pax",
+    className: "Panda Bard",
+    creature: "panda",
+    color: "#D96FA5",
+    light: "#F2A8CC",
+    dark: "#994A72",
+    motif: "spark",
   },
 } as const;
 

@@ -1,30 +1,34 @@
-import type { CSSProperties } from "react";
+"use client";
 
-export type Creature = "panda" | "squirrel" | "lion" | "bird";
+import type { CSSProperties } from "react";
+import type { CreatureState } from "@/lib/types";
+import { useArtStyle } from "./ArtStyleProvider";
+
+export type Creature = "panda" | "squirrel" | "lion" | "bird" | "beaver";
 
 export function CreaturePortrait({
   creature,
-  tier = 1,
+  state = "steady",
   width = 110,
   className = "",
   style,
 }: {
   creature: Creature;
-  tier?: 1 | 2 | 3;
+  state?: CreatureState;
   width?: number;
   className?: string;
   style?: CSSProperties;
 }) {
+  const { artStyle } = useArtStyle();
   return (
-    // Generated PNGs keep email rendering dependable and use the same tiered SVG originals.
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/characters/${creature}-tier-${tier}.png`}
+      src={`/creatures/${artStyle}/${creature}/${state}.svg`}
       alt=""
       aria-hidden="true"
       width={width}
-      height={Math.round((width * 240) / 220)}
-      className={className}
+      height={Math.round((width * 250) / 220)}
+      className={`creature-sprite creature-${creature} creature-state-${state} ${className}`}
       style={style}
     />
   );

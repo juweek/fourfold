@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>probe3</title>
+<style>body{margin:0;background:#0E1015;font:11px/1.4 monospace;color:#8B90A0}
+.row{display:flex;gap:8px;padding:8px}.cell{background:radial-gradient(circle at 50% 38%,#191D28,#0B0D12);border:1px solid #222}</style>
+</head><body>
+<div id="out"></div>
+<script src="../creature-lab3.js"></script>
+<script>
+var NS='http://www.w3.org/2000/svg';
+function el(d){var n=document.createElementNS(NS,d.t);for(var k in d.a){var v=d.a[k];if(k==='style'){for(var s in v)n.style.setProperty(s.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()),v[s]);}else n.setAttribute(k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()),v);}if(d.c)d.c.forEach(function(c){n.appendChild(el(c))});return n;}
+function draw(out,px){var s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 '+out.w+' '+out.h);s.setAttribute('width',px);s.setAttribute('height',Math.round(px*out.h/out.w));if(out.defs&&out.defs.length){var d=document.createElementNS(NS,'defs');out.defs.forEach(function(x){d.appendChild(el(x))});s.appendChild(d);}out.nodes.forEach(function(n){s.appendChild(el(n))});return s;}
+var L=window.CreatureLab3, o=document.getElementById('out');
+var qs=new URLSearchParams(location.search), px=+(qs.get('px')||250);
+var sig={momentum:+(qs.get('m')||.85),vitality:+(qs.get('v')||.9),volatility:.24,streak:+(qs.get('st')||14),neglect:+(qs.get('n')||0),level:+(qs.get('lv')||8)};
+var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px';
+(qs.get('only')?qs.get('only').split(','):L.ORDER).forEach(function(k){
+  var v=L.vitals(Object.assign({seed:'p3|'+k},sig));
+  var cell=document.createElement('div');cell.className='cell';cell.style.position='relative';
+  cell.appendChild(draw(L.render(k,v,{detail:'hi',facets:3,uid:'f3'}),px));
+  var t=document.createElement('div');t.textContent=k;t.style.cssText='position:absolute;top:4px;left:6px;color:#666';
+  cell.appendChild(t);grid.appendChild(cell);
+});
+o.appendChild(grid);
+</script></body></html>

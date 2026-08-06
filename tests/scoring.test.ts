@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { levelFromXp, scoreTasks, taskPoints, tierFromLevel } from "../lib/scoring.ts";
+import { levelFromXp, scoreTasks, taskPoints, tierFromLevel, xpByDomain } from "../lib/scoring.ts";
 
 test("difficulty and importance calculate the exact points table", () => {
   assert.equal(taskPoints("easy", "low"), 1);
@@ -32,4 +32,13 @@ test("levels and visual tiers follow the XP curve", () => {
   assert.equal(tierFromLevel(3), 1);
   assert.equal(tierFromLevel(4), 2);
   assert.equal(tierFromLevel(7), 3);
+});
+
+test("XP aggregation includes the Happy Life path", () => {
+  const totals = xpByDomain([
+    { domain: "life", points: 6, completed_at: "now" },
+    { domain: "work", points: 4, completed_at: "now" },
+    { domain: "life", points: 12, completed_at: null },
+  ]);
+  assert.deepEqual(totals, { work: 40, gourmet: 0, body: 0, finance: 0, life: 60 });
 });

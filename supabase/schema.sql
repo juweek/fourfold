@@ -15,7 +15,7 @@ insert into settings (id) values (1) on conflict (id) do nothing;
 create table if not exists templates (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  domain text not null check (domain in ('work','gourmet','body','finance')),
+  domain text not null check (domain in ('work','gourmet','body','finance','life')),
   difficulty text not null check (difficulty in ('easy','medium','hard')),
   importance text not null check (importance in ('low','medium','high')),
   recurrence text not null default 'none',
@@ -26,14 +26,14 @@ create table if not exists contacts (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   note text,
-  domain text not null default 'work' check (domain in ('work','gourmet','body','finance')),
+  domain text not null default 'work' check (domain in ('work','gourmet','body','finance','life')),
   created_at timestamptz not null default now()
 );
 
 create table if not exists tasks (
   id uuid primary key default gen_random_uuid(),
   title text not null,
-  domain text not null check (domain in ('work','gourmet','body','finance')),
+  domain text not null check (domain in ('work','gourmet','body','finance','life')),
   difficulty text not null check (difficulty in ('easy','medium','hard')),
   importance text not null check (importance in ('low','medium','high')),
   points int not null,

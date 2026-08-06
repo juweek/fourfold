@@ -60,6 +60,6 @@ export function xpByDomain(tasks: Pick<Task, "domain" | "points" | "completed_at
       if (task.completed_at) totals[task.domain] += task.points * 10;
       return totals;
     },
-    { work: 0, gourmet: 0, body: 0, finance: 0 },
+    { work: 0, gourmet: 0, body: 0, finance: 0, life: 0 },
   );
 }

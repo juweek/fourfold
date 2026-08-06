@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0D12; }
+  a { color: #D9A441; text-decoration: none; border-bottom: 1px solid rgba(217,164,65,.35); }
+  a:hover { color: #F2CD7E; border-bottom-color: rgba(242,205,126,.7); }
+  input[type=range] { accent-color: #D9A441; }
+  @keyframes ffIdle { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+</style>
+<script src="creature-lab3.js"></script>
+</helmet>
+
+<div style="width: max-content; padding: 46px 48px 72px; background: #0B0D12; font-family: Inter, system-ui, sans-serif; color: #E9E2D0;">
+
+  <div style="display: flex; flex-direction: column; gap: 24px; max-width: 1268px; margin-bottom: 38px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <div style="font-family: Fraunces, serif; font-size: 13px; letter-spacing: .34em; color: #D9A441;">FOURFOLD</div>
+      <div style="font-size: 12px; letter-spacing: .18em; color: #8B90A0;">ROUND 3 · FACETED PLATES · STATIC BY DEFAULT</div>
+    </div>
+    <h1 style="font-family: Fraunces, serif; font-weight: 500; font-size: 46px; line-height: 1.06; margin: 0; max-width: 22ch; text-wrap: pretty;">The 2c direction, angular and standing still.</h1>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; font-size: 14.5px; line-height: 1.62; color: #C6C0B0;">
+      <p style="margin: 0;">Every form is now built from straight segments and shaded by clipping it into flat bands along the light axis. That replaces round 2's per-form gradients: it reads more angular, more sculpted, and costs a third as much, because there are no gradient definitions and no filters anywhere in the sprite.</p>
+      <p style="margin: 0;">Nothing animates. The previous sheet ran an animation per body group per sprite, which is what made it heavy — twenty-odd sprites each driving eleven compositor layers. Motion is now a single opt-in idle on the whole sprite, off by default. The art carries the state instead of the movement.</p>
+      <p style="margin: 0;">Still fully generative. The same six signals drive facet contrast, seam light, mane fullness and droop, muscle definition, claw extension, tail fur, paint coverage, plant species, gourd fill, jewellery count and the smile. Move any slider and all four redraw.</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 372px 1fr; gap: 30px; background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 26px 28px; max-width: 1268px; margin-bottom: 34px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">SIGNALS — TRAILING TASK DATA</div>
+      <div style="display: flex; flex-direction: column; gap: 13px;">
+        <sc-for list="{{ sig }}" as="s" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;">
+            <div style="font-size: 13px; font-weight: 500;">{{ s.label }}</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #D9A441;">{{ s.display }}</div>
+            <input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" name="{{ s.id }}" onInput="{{ onSignal }}" style="grid-column: 1 / -1; width: 100%; height: 3px; margin: 2px 0 0; background: #232735; border-radius: 2px; appearance: none; -webkit-appearance: none; outline: none;">
+            <div style="grid-column: 1 / -1; font-size: 11px; color: #6E7382;">{{ s.hint }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 9px;">
+        <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">STATE PRESETS</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{ presets }}" as="p" hint-placeholder-count="5">
+            <button type="button" value="{{ p.id }}" onClick="{{ onPreset }}" style="font-family: Inter, sans-serif; font-size: 12.5px; color: #E9E2D0; background: #1E222C; border: 1px solid rgba(233,226,208,.1); border-radius: 999px; padding: 6px 14px; cursor: pointer;" style-hover="border-color: rgba(217,164,65,.6); color: #F2CD7E;">{{ p.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 9px;">
+        <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">DRAWING PROPERTIES — LIVE</div>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: rgba(233,226,208,.07); border: 1px solid rgba(233,226,208,.07); border-radius: 10px; overflow: hidden;">
+          <sc-for list="{{ readout }}" as="d" hint-placeholder-count="12">
+            <div style="background: #0F1218; padding: 9px 11px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: {{ d.tint }};">{{ d.val }}</div>
+              <div style="font-size: 11px; color: #E9E2D0;">{{ d.label }}</div>
+              <div style="font-size: 10px; color: #6E7382; line-height: 1.35;">{{ d.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 28px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #E9E2D0; border-radius: 4px; padding: 3px 8px;">3a</span>
+      <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 30px; margin: 0;">The party</h2>
+      <span style="font-size: 12.5px; color: #8B90A0;">click a creature to load it into the depth view below</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 620px); gap: 28px;">
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start;">
+        <div onClick="{{ onHeroSquirrel }}" style="background: radial-gradient(circle at 50% 38%, #1A1F28 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 8px; display: flex; justify-content: center; cursor: pointer;">{{ heroSquirrel }}</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Squirrel Summoner</h3>
+            <div style="font-size: 11px; letter-spacing: .14em; color: #34C784;">GOURMET DATA</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">THIS PASS</div>
+            <div>paint pulled back to the last 10% of the tail, with drips</div>
+            <div>tail rebuilt as 32 swept fur locks over a narrower core</div>
+            <div>moss patches and a calmer sigil ring</div>
+            <div>plants unchanged — four species, one unlocked per streak week</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start;">
+        <div onClick="{{ onHeroLion }}" style="background: radial-gradient(circle at 50% 38%, #1F1A19 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 8px; display: flex; justify-content: center; cursor: pointer;">{{ heroLion }}</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Lion Warrior</h3>
+            <div style="font-size: 11px; letter-spacing: .14em; color: #E4593D;">BODY</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">THIS PASS</div>
+            <div>torso is an angular chest-to-waist plate, not an oval</div>
+            <div>pecs, sternum line and three ab rows read as separate muscle</div>
+            <div>mane is broad locks weighted downward — full, Mufasa droop, still wild</div>
+            <div>claws extend with momentum; bulk vs softness still from streak</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start;">
+        <div onClick="{{ onHeroBird }}" style="background: radial-gradient(circle at 50% 38%, #1F1D16 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 8px; display: flex; justify-content: center; cursor: pointer;">{{ heroBird }}</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Eagle Scholar</h3>
+            <div style="font-size: 11px; letter-spacing: .14em; color: #F2C13E;">FINANCE</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">THIS PASS</div>
+            <div>eagle build: pale head, heavy hooked beak, brow ridge, nape ruff</div>
+            <div>wings are three overlapping rows — primaries, secondaries, coverts</div>
+            <div>yellow throughout, with the head held paler than the body</div>
+            <div>still holds the slab; the line on it is the real 30-day trend</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start;">
+        <div onClick="{{ onHeroBard }}" style="background: radial-gradient(circle at 50% 38%, #1F1A1E 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 8px; display: flex; justify-content: center; cursor: pointer;">{{ heroBard }}</div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Panda Bard</h3>
+            <div style="font-size: 11px; letter-spacing: .14em; color: #E4699F;">ENJOYMENT</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">THIS PASS</div>
+            <div>big sake gourd with cord, stopper and a cup — fill level reads joy</div>
+            <div>jewellery: two earrings, three wrist bangles, beaded necklace, pendant</div>
+            <div>flower crown, smile arc and floating notes all scale with joy</div>
+            <div>lute kept behind the left shoulder so the gourd leads</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 620px); gap: 28px;">
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #D9A441; border-radius: 4px; padding: 3px 7px;">3b</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 24px; margin: 0;">Depth view</h3>
+          <span style="font-size: 12px; color: #8B90A0;">drag inside the frame</span>
+        </div>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: #C6C0B0;">The same sprite, split by body group into ten planes in a 3D scene. It sits at a fixed tilt and only moves while you drag — no idle animation, so it costs nothing at rest. This is the garden and History treatment; cards use the flat version above.</p>
+        <div style="background: radial-gradient(circle at 50% 38%, #1A1F28 0%, #0B0D12 76%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 14px; display: flex; justify-content: center; overflow: hidden;">{{ depthHero }}</div>
+      </div>
+
+      <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #D9A441; border-radius: 4px; padding: 3px 7px;">3c</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 24px; margin: 0;">Sizes and states</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">SAME FILE AT 96 / 56 / 42PX — CARD AND EMAIL SIZES</div>
+          <div style="display: flex; gap: 18px; align-items: flex-end;">{{ sizeRow }}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">THE SELECTED CREATURE ACROSS FOUR STATES</div>
+          <div style="display: flex; gap: 12px; align-items: flex-end;">{{ ladder }}</div>
+        </div>
+        <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+          <div><span style="color: #7FE7B4;">Cost</span> · 240–380 paths at hero, ~80 at 56px. No gradients, no filters, no animation. Renders once and sits there.</div>
+          <div><span style="color: #7FE7B4;">Next</span> · pick a facet count, then I cut the 56px card variant and the flattened PNG for email.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1364,&quot;height&quot;:1600},&quot;facets&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:3,&quot;min&quot;:2,&quot;max&quot;:5,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Surface&quot;},&quot;idle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;off&quot;,&quot;subtle&quot;],&quot;default&quot;:&quot;off&quot;,&quot;tsType&quot;:&quot;'off'|'subtle'&quot;,&quot;section&quot;:&quot;Motion&quot;}}">
+class Component extends DCLogic {
+  state = { momentum: .82, vitality: .88, volatility: .24, streak: 13, neglect: 0, level: 7, hero: 'lion', seed: 'r3a' };
+
+  onSignal = (e) => this.setState({ [e.target.name]: parseFloat(e.target.value) });
+  onPreset = (e) => {
+    const p = window.CreatureLab3.PRESETS[e.currentTarget.value];
+    if (p) this.setState(Object.assign({}, p, { seed: 'r' + Math.floor(Math.random() * 999) }));
+  };
+  pick = (k) => () => this.setState({ hero: k });
+
+  node(d, i) {
+    const props = Object.assign({ key: d.k || ('n' + i) }, d.a);
+    return React.createElement(d.t, props, d.c ? d.c.map(this.node, this) : null);
+  }
+
+  vitalsFor(key, override) {
+    const s = Object.assign({}, this.state, override || {});
+    return window.CreatureLab3.vitals({
+      momentum: s.momentum, vitality: s.vitality, volatility: s.volatility,
+      streak: s.streak, neglect: s.neglect, level: s.level, seed: s.seed + '|' + key
+    });
+  }
+
+  facets() { const f = this.props.facets; return f === undefined ? 3 : Math.round(f); }
+
+  sprite(key, px, override, uid) {
+    const L = window.CreatureLab3, v = this.vitalsFor(key, override);
+    const out = L.render(key, v, { detail: px > 90 ? 'hi' : 'lo', facets: this.facets(), uid: (uid || '') + px });
+    const kids = [];
+    if (out.defs.length) kids.push(React.createElement('defs', { key: 'defs' }, out.defs.map(this.node, this)));
+    out.nodes.forEach((n, i) => kids.push(this.node(n, i)));
+    const svg = React.createElement('svg', {
+      viewBox: '0 0 ' + L.W + ' ' + L.H, width: px, height: Math.round(px * L.H / L.W),
+      style: { display: 'block', overflow: 'visible' }
+    }, kids);
+    if (this.props.idle !== 'subtle') return svg;
+    return React.createElement('div', { style: { animation: 'ffIdle ' + (5.6 - 2.4 * this.state.momentum).toFixed(1) + 's ease-in-out infinite' } }, svg);
+  }
+
+  depth(key, px) {
+    const L = window.CreatureLab3, v = this.vitalsFor(key);
+    const out = L.render(key, v, { detail: 'hi', facets: this.facets(), uid: 'dp' });
+    const h = Math.round(px * L.H / L.W);
+    const spread = .55 + .85 * v.input.momentum;
+    const zOf = (k) => { for (const g in L.PLANES) if (String(k).endsWith('G' + g)) return L.PLANES[g] * spread; return -95 * spread; };
+    const kids = [];
+    if (out.defs.length) kids.push(React.createElement('svg', { key: 'defs', width: 0, height: 0, style: { position: 'absolute' } },
+      React.createElement('defs', null, out.defs.map(this.node, this))));
+    out.nodes.forEach((nd, i) => {
+      const z = zOf(nd.k);
+      if (i === 1 && v.fog > .1) kids.push(React.createElement('div', {
+        key: 'fog', style: {
+          position: 'absolute', left: 0, top: 0, width: px + 'px', height: h + 'px',
+          background: 'linear-gradient(#0B0D12, rgba(11,13,18,.1))', opacity: (v.fog * 1.3).toFixed(2),
+          transform: 'translateZ(-58px)'
+        }
+      }));
+      kids.push(React.createElement('svg', {
+        key: 'p' + i, viewBox: '0 0 ' + L.W + ' ' + L.H, width: px, height: h,
+        style: { position: 'absolute', left: 0, top: 0, transform: 'translateZ(' + z.toFixed(1) + 'px)', overflow: 'visible' }
+      }, this.node(nd, i)));
+    });
+    const inner = React.createElement('div', {
+      key: 'in', ref: (el) => { this.dio = el; },
+      style: {
+        position: 'relative', width: px + 'px', height: h + 'px', transformStyle: 'preserve-3d',
+        transform: 'rotateY(var(--ry, -12deg)) rotateX(var(--rx, 4deg))', transition: 'transform .4s ease-out'
+      }
+    }, kids);
+    return React.createElement('div', {
+      key: 'dp-' + key + px, onPointerMove: this.onMove, onPointerLeave: this.onLeave,
+      style: { perspective: '900px', width: px + 'px', height: h + 'px', cursor: 'grab', touchAction: 'none' }
+    }, inner);
+  }
+
+  onMove = (e) => {
+    if (!this.dio) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    const amp = 20 + 20 * this.state.volatility;
+    this.dio.style.transition = 'none';
+    this.dio.style.setProperty('--ry', (x * amp).toFixed(1) + 'deg');
+    this.dio.style.setProperty('--rx', (-y * amp * .6).toFixed(1) + 'deg');
+  };
+  onLeave = () => {
+    if (!this.dio) return;
+    this.dio.style.transition = 'transform .5s ease-out';
+    this.dio.style.setProperty('--ry', '-12deg');
+    this.dio.style.setProperty('--rx', '4deg');
+  };
+
+  label(text, node, w) {
+    return React.createElement('div', { key: text, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' } }, [
+      React.createElement('div', { key: 'a', style: { width: w + 'px', display: 'flex', justifyContent: 'center' } }, node),
+      React.createElement('div', { key: 'l', style: { fontSize: '9px', letterSpacing: '.08em', color: '#6E7382', fontFamily: 'IBM Plex Mono, monospace' } }, text)
+    ]);
+  }
+
+  renderVals() {
+    const L = window.CreatureLab3;
+    if (!L) return {};
+    const s = this.state, hero = L.DOMAINS[s.hero] ? s.hero : 'lion';
+    const v = this.vitalsFor(hero), st = L.STATES[v.state], HERO = 300;
+
+    const sig = L.SIGNALS.map((x) => ({
+      id: x.id, label: x.label, hint: x.hint, min: x.min, max: x.max, step: x.step, value: s[x.id],
+      display: x.step < 1 ? (+s[x.id]).toFixed(2) : String(s[x.id]) + (x.id === 'level' ? ' · tier ' + ['I', 'II', 'III'][v.tier - 1] : 'd')
+    }));
+
+    const readout = [
+      { label: 'state', val: st.label.toLowerCase(), note: st.note, tint: st.color },
+      { label: 'sat × lum', val: v.sat.toFixed(2) + ' × ' + v.lum.toFixed(2), note: 'pallor vs vibrancy across every plate', tint: '#E9E2D0' },
+      { label: 'facet contrast', val: v.spec.toFixed(2), note: 'spread between the lightest and darkest band', tint: '#E9E2D0' },
+      { label: 'rim', val: v.rim.toFixed(2), note: 'white seam light on the lit edge', tint: '#FFFFFF' },
+      { label: 'emissive', val: v.emissive.toFixed(2), note: 'coloured under-glow on the same seam', tint: '#7FE7B4' },
+      { label: 'gold', val: (v.gold * 100).toFixed(0) + '%', note: 'gilded facets; ≥ 43% is the gold event', tint: '#D9A441' },
+      { label: 'bulk', val: v.bulk.toFixed(2), note: 'lion: chest and arm mass vs soft belly', tint: '#FF8A6B' },
+      { label: 'curl', val: v.curl.toFixed(2), note: 'mane lock curl and wildness', tint: '#FF8A6B' },
+      { label: 'fur', val: v.fur.toFixed(2), note: 'squirrel: tail lock length and density', tint: '#7FE7B4' },
+      { label: 'joy', val: v.joy.toFixed(2), note: 'bard: gourd fill, note count, smile arc', tint: '#FFB3D2' },
+      { label: 'ornament', val: String(v.ornament), note: 'generated element count — feathers, locks, plants', tint: '#B9AEFF' },
+      { label: 'tier', val: ['I', 'II', 'III'][v.tier - 1], note: 'additive layers at Lv 1 / 4 / 7', tint: '#E9E2D0' }
+    ];
+
+    const sizeRow = [96, 56, 42].map((px) => this.label(px + 'PX', this.sprite(hero, px, null, 'sz'), Math.max(px, 46)));
+    const ladder = ['radiant', 'steady', 'slipping', 'dormant'].map((k) =>
+      this.label(k.toUpperCase(), this.sprite(hero, 118, L.PRESETS[k], 'ld' + k), 118));
+
+    return {
+      sig, readout,
+      presets: [
+        { id: 'radiant', label: 'Radiant' }, { id: 'steady', label: 'Steady' }, { id: 'drifting', label: 'Drifting' },
+        { id: 'slipping', label: 'Slipping' }, { id: 'dormant', label: 'Dormant' }
+      ],
+      onSignal: this.onSignal, onPreset: this.onPreset,
+      onHeroSquirrel: this.pick('squirrel'), onHeroLion: this.pick('lion'),
+      onHeroBird: this.pick('bird'), onHeroBard: this.pick('bard'),
+      heroSquirrel: this.sprite('squirrel', HERO, null, 'h'),
+      heroLion: this.sprite('lion', HERO, null, 'h'),
+      heroBird: this.sprite('bird', HERO, null, 'h'),
+      heroBard: this.sprite('bard', HERO, null, 'h'),
+      depthHero: this.depth(hero, 300),
+      sizeRow, ladder
+    };
+  }
+}
+</script>
+</body>
+</html>

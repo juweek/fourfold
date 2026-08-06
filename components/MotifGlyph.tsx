@@ -17,6 +17,11 @@ export function MotifGlyph({ domain, size = 16 }: { domain: Domain; size?: numbe
       <svg {...common}><path d="m1.5 13 4.1-7 2.2 3.1L10.5 3l4 10h-13Z" fill="currentColor"/><path d="m8.1 8.4 2.3-4.9 1.2 3.1" stroke="#12141A" strokeWidth="1" opacity=".55"/></svg>
     );
   }
+  if (domain === "life") {
+    return (
+      <svg {...common}><path d="M8 13.2S2.2 9.6 2.2 5.8c0-2.5 3.2-3.5 5.8-.6 2.6-2.9 5.8-1.9 5.8.6 0 3.8-5.8 7.4-5.8 7.4Z" fill="currentColor"/><path d="m8 1 .6 1.5L10 3l-1.4.5L8 5l-.6-1.5L6 3l1.4-.5L8 1Z" fill="#12141A" opacity=".55"/></svg>
+    );
+  }
   return (
     <svg {...common}><path d="M2 12.5h12M3.5 11l3-3 2.2 1.5L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 4h3v3" stroke="currentColor" strokeWidth="1.5"/></svg>
   );

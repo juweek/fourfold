@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { exportCreatureSprites } from "../generative_art/export-creature-sprites.mjs";
 
 const root = process.cwd();
 const output = path.join(root, "public", "characters");
@@ -11,6 +12,15 @@ const creatures = [
   ["lion", "lion-warrior.svg"],
   ["bird", "bird-scholar.svg"],
 ];
+
+const generatedSprites = await exportCreatureSprites();
+for (const surface of generatedSprites.surfaces) {
+  await fs.cp(
+    path.join(root, "generative_art", "exports", surface),
+    path.join(root, "public", "creatures", surface),
+    { recursive: true, force: true },
+  );
+}
 
 await fs.mkdir(output, { recursive: true });
 await fs.mkdir(svgOutput, { recursive: true });
@@ -49,3 +59,27 @@ const party = await sharp({
   .toBuffer();
 
 await fs.writeFile(path.join(output, "party.png"), party);
+
+const generatedPartyLayout = [
+  { creature: "bird", width: 270, left: 305, top: 0 },
+  { creature: "beaver", width: 280, left: 140, top: 200 },
+  { creature: "squirrel", width: 150, left: 25, top: 330 },
+  { creature: "lion", width: 270, left: 585, top: 205 },
+  { creature: "panda", width: 350, left: 315, top: 115 },
+];
+
+async function renderGeneratedParty(surface) {
+  const layers = await Promise.all(generatedPartyLayout.map(async (item) => ({
+    input: await sharp(path.join(root, "public", "creatures", surface, item.creature, "steady.svg")).resize({ width: item.width }).png().toBuffer(),
+    left: item.left,
+    top: item.top,
+  })));
+  return sharp({
+    create: { width: 880, height: 520, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  }).composite(layers).png().toBuffer();
+}
+
+for (const surface of ["faceted", "ink-spore"]) {
+  await fs.writeFile(path.join(output, `party-${surface}.png`), await renderGeneratedParty(surface));
+}
+await fs.copyFile(path.join(output, "party-ink-spore.png"), path.join(output, "party.png"));

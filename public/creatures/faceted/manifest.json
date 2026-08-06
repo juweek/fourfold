@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "generative_art/export-creature-sprites.mjs",
+  "engine": "generative_art/creature-lab4.js",
+  "surface": "faceted",
+  "surfaceLabel": "Faceted",
+  "viewBox": [
+    0,
+    0,
+    220,
+    250
+  ],
+  "aspectRatio": 0.88,
+  "detailPolicy": {
+    "high": "display width > 90px",
+    "low": "display width <= 90px"
+  },
+  "exportPolicy": {
+    "facets": 3
+  },
+  "stateOrder": [
+    "radiant",
+    "steady",
+    "drifting",
+    "slipping",
+    "dormant"
+  ],
+  "creatureOrder": [
+    "squirrel",
+    "lion",
+    "bird",
+    "panda",
+    "beaver"
+  ],
+  "svgCount": 30,
+  "creatures": {
+    "squirrel": {
+      "name": "Squirrel Summoner",
+      "domain": "Gourmet Data",
+      "signature": "paint on the tail tip, one plant species per streak week, moss with 30-day XP",
+      "files": {
+        "radiant": "squirrel/radiant.svg",
+        "steady": "squirrel/steady.svg",
+        "drifting": "squirrel/drifting.svg",
+        "slipping": "squirrel/slipping.svg",
+        "dormant": "squirrel/dormant.svg",
+        "card": "squirrel/card.svg"
+      }
+    },
+    "lion": {
+      "name": "Lion Warrior",
+      "domain": "Body",
+      "signature": "pumped build + mane fullness from streak, claw extension and radiant smirk from momentum",
+      "files": {
+        "radiant": "lion/radiant.svg",
+        "steady": "lion/steady.svg",
+        "drifting": "lion/drifting.svg",
+        "slipping": "lion/slipping.svg",
+        "dormant": "lion/dormant.svg",
+        "card": "lion/card.svg"
+      }
+    },
+    "bird": {
+      "name": "Eagle Scholar",
+      "domain": "Finance",
+      "signature": "three feather rows scale with level; the slab plots the real 30-day trend",
+      "files": {
+        "radiant": "bird/radiant.svg",
+        "steady": "bird/steady.svg",
+        "drifting": "bird/drifting.svg",
+        "slipping": "bird/slipping.svg",
+        "dormant": "bird/dormant.svg",
+        "card": "bird/card.svg"
+      }
+    },
+    "panda": {
+      "name": "Panda Bard",
+      "domain": "Enjoyment",
+      "signature": "oversized gourd fill, bronze jewellery and smile arc all read joy",
+      "files": {
+        "radiant": "panda/radiant.svg",
+        "steady": "panda/steady.svg",
+        "drifting": "panda/drifting.svg",
+        "slipping": "panda/slipping.svg",
+        "dormant": "panda/dormant.svg",
+        "card": "panda/card.svg"
+      }
+    },
+    "beaver": {
+      "name": "Beaver Engineer",
+      "domain": "Systems",
+      "signature": "open brass gyroscope + vitality gauge; tools and stick field grow with level and streak",
+      "files": {
+        "radiant": "beaver/radiant.svg",
+        "steady": "beaver/steady.svg",
+        "drifting": "beaver/drifting.svg",
+        "slipping": "beaver/slipping.svg",
+        "dormant": "beaver/dormant.svg",
+        "card": "beaver/card.svg"
+      }
+    }
+  }
+}

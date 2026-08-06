@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { History, MoreHorizontal, Plane, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Copy, History, MoreHorizontal, Plane, RefreshCw, Repeat } from "lucide-react";
 import { DOMAIN_META, DOMAINS } from "@/lib/domains";
 import type { Difficulty, Domain, DomainProgress, Importance, Score, Settings, Task } from "@/lib/types";
 import { CreaturePortrait } from "./CreaturePortrait";
@@ -11,6 +11,7 @@ import { MotifGlyph } from "./MotifGlyph";
 import { PillSelector } from "./PillSelector";
 import { ScoreRing } from "./ScoreRing";
 import { TaskSheet } from "./TaskSheet";
+import { completedTaskValues, RadarChart } from "./RadarChart";
 
 type TodayData = {
   date: string;
@@ -42,6 +43,7 @@ export function TodayDashboard() {
   const [pulse, setPulse] = useState(false);
   const [toast, setToast] = useState("");
   const [adding, setAdding] = useState(false);
+  const taskListRef = useRef<HTMLElement>(null);
   const [quick, setQuick] = useState<{ title: string; domain: Domain; difficulty: Difficulty; importance: Importance }>({ title: "", domain: "work", difficulty: "medium", importance: "medium" });
 
   const load = useCallback(async () => {
@@ -89,6 +91,23 @@ export function TodayDashboard() {
     setMenuFor(null); setConfirmDelete(null); setToast("Quest deleted."); await load();
   }
 
+  async function duplicateTask(task: Task) {
+    const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance }) });
+    if (!response.ok) { setToast((await response.json()).error ?? "Could not duplicate the quest."); return; }
+    setMenuFor(null); setToast("Quest duplicated for today."); await load();
+  }
+
+  async function makeDaily(task: Task) {
+    const response = await fetch(`/api/tasks/${task.id}/daily`, { method: "POST" });
+    if (!response.ok) { setToast((await response.json()).error ?? "Could not make this quest daily."); return; }
+    setMenuFor(null); setToast("Daily quest enabled. It will appear once each day.");
+  }
+
+  function filterFromCharacter(domain: Domain) {
+    setFilter((current) => current === domain ? "all" : domain);
+    window.requestAnimationFrame(() => taskListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
   async function sendBriefing() {
     setSending(true);
     const response = await fetch("/api/briefing/send", { method: "POST" });
@@ -125,9 +144,9 @@ export function TodayDashboard() {
             {DOMAINS.map((domain) => <button key={domain} className={filter === domain ? "active" : ""} onClick={() => setFilter(domain)} style={{ color: filter === domain ? DOMAIN_META[domain].light : undefined }}><MotifGlyph domain={domain}/><span>{DOMAIN_META[domain].label}</span> · {openTasks.filter((task) => task.domain === domain).length}</button>)}
           </div>
 
-          <section className="task-list card" aria-label="Today's quests">
+          <section className="task-list card" aria-label="Today's quests" ref={taskListRef}>
             <div className="card-title-row"><div><span className="eyebrow">Quest log</span><h2>{filter === "all" ? "Today" : DOMAIN_META[filter].label}</h2></div><span>{visibleTasks.filter((task) => !task.completed_at).length} open</span></div>
-            {visibleTasks.length ? visibleTasks.map((task, index) => {
+            <div className="task-list-scroll">{visibleTasks.length ? visibleTasks.map((task, index) => {
               const previous = visibleTasks[index - 1];
               const bonusHeading = task.is_bonus && !previous?.is_bonus;
               return <div key={task.id}>{bonusHeading && <div className="bonus-divider"><span>Bonus</span></div>}<div className={`task-row ${task.completed_at ? "completed" : ""}`}>
@@ -135,9 +154,9 @@ export function TodayDashboard() {
                 <div className="task-main"><strong>{task.title}</strong><span style={{ color: DOMAIN_META[task.domain].light }}><MotifGlyph domain={task.domain}/>{DOMAIN_META[task.domain].label}</span></div>
                 <span className="task-chip">{task.difficulty[0].toUpperCase()} · {task.importance[0].toUpperCase()}</span>
                 <span className="points-badge">{task.points}</span>
-                <div className="task-menu"><button className="icon-button small" onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => setEditing(task)}>Edit</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task.id) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
+                <div className="task-menu"><button className="icon-button small" onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => { setEditing(task); setMenuFor(null); }}>Edit</button><button onClick={() => duplicateTask(task)}><Copy size={13}/>Duplicate</button><button onClick={() => makeDaily(task)}><Repeat size={13}/>Make daily</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task.id) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
               </div></div>;
-            }) : <div className="empty-state"><span>✦</span><h3>No quests today.</h3><p>Add one above, or draw from the Task Bank.</p><a className="ghost-button" href="/bank">Open Task Bank</a></div>}
+            }) : <div className="empty-state"><span>✦</span><h3>No quests today.</h3><p>Add one above, or draw from the Task Bank.</p><a className="ghost-button" href="/bank">Open Task Bank</a></div>}</div>
           </section>
         </section>
 
@@ -147,14 +166,16 @@ export function TodayDashboard() {
             <div><span className="eyebrow">Today&apos;s score</span><h2>{earned} / {data.score.plannedPoints} pts</h2><p>{data.score.earnedBonusPoints ? `+${data.score.earnedBonusPoints} bonus · ` : ""}{openTasks.length} quests remain</p></div>
           </section>
           <GardenScene progress={data.progress}/>
+          <section className="today-radar-card card"><div><span className="eyebrow">Today&apos;s balance</span><h2>Tasks done</h2><p>Completed quests across the five paths.</p></div><RadarChart values={completedTaskValues(data.tasks)} label="Today" /></section>
           <div className="character-grid">
             {data.progress.map((item) => {
               const meta = DOMAIN_META[item.domain];
-              return <article className="character-card card" key={item.domain} style={{ "--domain": meta.color, "--domain-light": meta.light } as React.CSSProperties}>
-                <CreaturePortrait creature={meta.creature} tier={item.tier} width={item.domain === "gourmet" ? 52 : item.domain === "work" ? 65 : 58}/>
+              const spriteWidth = item.domain === "gourmet" ? 44 : item.domain === "life" ? 76 : item.domain === "work" ? 64 : 58;
+              return <button type="button" className={`character-card card ${filter === item.domain ? "active" : ""}`} key={item.domain} style={{ "--domain": meta.color, "--domain-light": meta.light } as React.CSSProperties} onClick={() => filterFromCharacter(item.domain)} aria-pressed={filter === item.domain} aria-label={`Filter quests by ${meta.label}`}>
+                <CreaturePortrait creature={meta.creature} state={item.state} width={spriteWidth}/>
                 <div className="character-info"><div><h3>{meta.name}</h3><span>{meta.className}</span></div><b>Lv {item.level}</b><div className="xp-track"><i style={{ width: `${progressPercent(item)}%` }}/></div><small>{item.xp} / {item.nextLevelXp} XP</small></div>
                 <div className="micro-progress"><span>T <b>+{item.todayXp}</b><i><em style={{ width: `${Math.min(100, item.todayXp / 1.2)}%` }}/></i></span><span>W <b>+{item.weekXp}</b><i><em style={{ width: `${Math.min(100, item.weekXp / item.paceXp * 100)}%` }}/></i></span></div>
-              </article>;
+              </button>;
             })}
           </div>
         </aside>

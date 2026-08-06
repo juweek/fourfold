@@ -6,7 +6,7 @@ import { getSettings } from "@/lib/today";
 import { nowHHMMInTz, todayInTz } from "@/lib/time";
 import type { Difficulty, Domain, Importance } from "@/lib/types";
 
-const domains = new Set(["work", "gourmet", "body", "finance"]);
+const domains = new Set(["work", "gourmet", "body", "finance", "life"]);
 const difficulties = new Set(["easy", "medium", "hard"]);
 const importances = new Set(["low", "medium", "high"]);
 

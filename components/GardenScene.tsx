@@ -16,11 +16,12 @@ function healthLabel(xp: number, pace: number) {
 
 export function GardenScene({ progress, expanded = false }: { progress: DomainProgress[]; expanded?: boolean }) {
   const byDomain = Object.fromEntries(progress.map((item) => [item.domain, item])) as Record<string, DomainProgress>;
-  const tiers = {
-    panda: byDomain.work?.tier ?? 1,
-    squirrel: byDomain.gourmet?.tier ?? 1,
-    lion: byDomain.body?.tier ?? 1,
-    bird: byDomain.finance?.tier ?? 1,
+  const states = {
+    beaver: byDomain.work?.state ?? "steady",
+    squirrel: byDomain.gourmet?.state ?? "steady",
+    lion: byDomain.body?.state ?? "steady",
+    bird: byDomain.finance?.state ?? "steady",
+    panda: byDomain.life?.state ?? "steady",
   } as const;
   return (
     <section className={`garden-scene ${expanded ? "garden-expanded" : ""}`} aria-label="The party's seven-day momentum garden">
@@ -48,7 +49,7 @@ export function GardenScene({ progress, expanded = false }: { progress: DomainPr
           );
         })}
       </div>
-      <PartyPortrait tiers={tiers} className="garden-party" />
+      <PartyPortrait states={states} className="garden-party" />
       <div className="garden-labels">
         {DOMAINS.map((domain) => {
           const item = byDomain[domain];

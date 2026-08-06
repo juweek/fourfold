@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0D12; }
+  input[type=range] { accent-color: #D9A441; }
+  @keyframes ffIdle { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2px) } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+</style>
+<script src="creature-lab4.js"></script>
+</helmet>
+
+<div style="width: max-content; padding: 44px 48px 70px; background: #0B0D12; font-family: Inter, system-ui, sans-serif; color: #E9E2D0;">
+  <header style="display: flex; flex-direction: column; gap: 22px; max-width: 1268px; margin-bottom: 34px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <div style="font-family: Fraunces, serif; font-size: 13px; letter-spacing: .34em; color: #D9A441;">FOURFOLD</div>
+      <div style="font-size: 12px; letter-spacing: .18em; color: #8B90A0;">ROUND 4 · 2B INK &amp; SPORE · SHARED ANATOMY</div>
+    </div>
+    <h1 style="font-family: Fraunces, serif; font-weight: 500; font-size: 46px; line-height: 1.05; margin: 0; max-width: 22ch; text-wrap: pretty;">The same party, pressed into ink and breathing spores.</h1>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; font-size: 14.5px; line-height: 1.62; color: #C6C0B0;">
+      <p style="margin: 0;">This is the Round 3 anatomy under the 2b surface: constant manga-weight outlines, diagonal hatching clipped to the shadow core, pale rim ink, paper tooth and signal-driven bioluminescent spores. Nothing about the creature's data or silhouette changes when the surface switches.</p>
+      <p style="margin: 0;">The lion now starts powerful instead of earning basic muscle, with tighter angry eyes and a one-sided smirk in Radiant. The panda is wider, taller and heavier than the lion, wearing bronze and earth tones; its sake gourd is deliberately larger than its lute.</p>
+      <p style="margin: 0;">The Beaver Engineer returns to its earlier Draft 3 composition: broad belly-up recline, left paddle tail, one raised hind paw, twin goggles, an open brass gyroscope, vitality gauge and loose tools. The cyan belly core is removed, while the procedural stick field remains shared by both surfaces.</p>
+    </div>
+  </header>
+
+  <section style="display: grid; grid-template-columns: 372px 1fr; gap: 30px; background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 25px 28px; max-width: 1268px; margin-bottom: 34px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">SIGNALS — TRAILING TASK DATA</div>
+      <sc-for list="{{ sig }}" as="s" hint-placeholder-count="6">
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;">
+          <div style="font-size: 13px; font-weight: 500;">{{ s.label }}</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #D9A441;">{{ s.display }}</div>
+          <input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" name="{{ s.id }}" onInput="{{ onSignal }}" style="grid-column: 1 / -1; width: 100%; height: 3px; margin: 2px 0 0; appearance: none; -webkit-appearance: none; background: #232735; border-radius: 2px; outline: none;">
+          <div style="grid-column: 1 / -1; font-size: 10.5px; color: #6E7382;">{{ s.hint }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">SURFACE — SAME DRAWING TREE</div>
+          <div style="display: flex; gap: 8px;">
+            <sc-for list="{{ surfaces }}" as="p" hint-placeholder-count="2">
+              <button type="button" value="{{ p.id }}" onClick="{{ onSurface }}" style="font-family: Inter, sans-serif; font-size: 12.5px; color: {{ p.color }}; background: {{ p.bg }}; border: 1px solid {{ p.bd }}; border-radius: 999px; padding: 7px 14px; cursor: pointer;">{{ p.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">STATE PRESETS</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ presets }}" as="p" hint-placeholder-count="5">
+              <button type="button" value="{{ p.id }}" onClick="{{ onPreset }}" style="font-family: Inter, sans-serif; font-size: 12px; color: #E9E2D0; background: #1E222C; border: 1px solid rgba(233,226,208,.1); border-radius: 999px; padding: 6px 12px; cursor: pointer;">{{ p.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0; margin-bottom: 9px;">INK &amp; SPORE PROPERTIES — LIVE</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rgba(233,226,208,.07); border: 1px solid rgba(233,226,208,.07); border-radius: 10px; overflow: hidden;">
+          <sc-for list="{{ readout }}" as="d" hint-placeholder-count="8">
+            <div style="background: #0F1218; padding: 9px 11px 10px; display: flex; flex-direction: column; gap: 2px; min-height: 50px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: {{ d.tint }};">{{ d.val }}</div>
+              <div style="font-size: 11px; color: #E9E2D0;">{{ d.label }}</div>
+              <div style="font-size: 10px; color: #6E7382; line-height: 1.35;">{{ d.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 20px; max-width: 1268px; margin-bottom: 34px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #E9E2D0; border-radius: 4px; padding: 3px 8px;">4A</span>
+      <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 30px; margin: 0;">The requested pass</h2>
+      <span style="font-size: 12.5px; color: #8B90A0;">click a creature to load it into the state study</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, 404px); gap: 28px;">
+      <article style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div onClick="{{ onHeroLion }}" style="background: radial-gradient(circle at 50% 38%, #221B1A 0%, #0B0D12 74%); border-radius: 11px; display: flex; justify-content: center; cursor: pointer;">{{ heroLion }}</div>
+        <div><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Lion Warrior</h3><div style="font-size: 10.5px; letter-spacing: .15em; color: #E4593D;">BODY · FIERCE</div></div>
+        <div style="font-size: 12.5px; line-height: 1.52; color: #C6C0B0;">Angrier lids and inward focus, a permanently pumped chest and shoulders, longer claws with momentum, and a slight one-fang smirk only when Radiant.</div>
+      </article>
+      <article style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div onClick="{{ onHeroBard }}" style="background: radial-gradient(circle at 50% 38%, #221F18 0%, #0B0D12 74%); border-radius: 11px; display: flex; justify-content: center; cursor: pointer;">{{ heroBard }}</div>
+        <div><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Panda Bard</h3><div style="font-size: 10.5px; letter-spacing: .15em; color: #D9A441;">ENJOYMENT · ZEN</div></div>
+        <div style="font-size: 12.5px; line-height: 1.52; color: #C6C0B0;">The largest body in the party: wider belly, larger head and heavier seated base. Gold, bronze and brown replace most pink. The gourd now decisively outweighs the tucked lute.</div>
+      </article>
+      <article style="background: #14171F; border: 1px solid rgba(157,230,216,.2); border-radius: 14px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div onClick="{{ onHeroBeaver }}" style="background: radial-gradient(circle at 50% 48%, #172522 0%, #0B0D12 74%); border-radius: 11px; display: flex; justify-content: center; cursor: pointer;">{{ heroBeaver }}</div>
+        <div><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 22px; margin: 0 0 2px;">Beaver Engineer</h3><div style="font-size: 10.5px; letter-spacing: .15em; color: #9DE6D8;">SYSTEMS · DRAFT 3 RESTORED</div></div>
+        <div style="font-size: 12.5px; line-height: 1.52; color: #C6C0B0;">The earlier round-bodied, belly-up engineer is back with its left paddle tail, raised paw, twin goggles, open brass gyroscope, gauge and tool bench. The former cyan core is gone; its surrounding sticks still grow from task signals.</div>
+      </article>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, 620px); gap: 28px;">
+      <article style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 16px 22px; display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 20px;">
+        <div onClick="{{ onHeroSquirrel }}" style="display: flex; justify-content: center; cursor: pointer;">{{ heroSquirrel }}</div>
+        <div><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 20px; margin: 0 0 6px;">Squirrel Summoner</h3><div style="font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">The existing paint, moss and procedural plants become an especially natural fit for the spore surface.</div></div>
+      </article>
+      <article style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 16px 22px; display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 20px;">
+        <div onClick="{{ onHeroBird }}" style="display: flex; justify-content: center; cursor: pointer;">{{ heroBird }}</div>
+        <div><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 20px; margin: 0 0 6px;">Eagle Scholar</h3><div style="font-size: 12.5px; line-height: 1.5; color: #C6C0B0;">Hatching separates the three feather rows while the slab continues to carry the actual 30-day trend.</div></div>
+      </article>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: 620px 620px; gap: 28px; max-width: 1268px;">
+    <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #D9A441; border-radius: 4px; padding: 3px 7px;">4B</span><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 24px; margin: 0;">Surface switch contract</h3></div>
+      <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: #C6C0B0;">Both frames call the same <span style="font-family: 'IBM Plex Mono', monospace; color: #E9E2D0;">build()</span> result. The app can switch <span style="font-family: 'IBM Plex Mono', monospace; color: #E9E2D0;">style</span> without changing creature, vitals, seed, tier or state.</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; background: #0B0D12; border-radius: 10px; padding: 8px;">{{ compareFaceted }}<div style="font-size: 9px; letter-spacing: .12em; color: #8B90A0;">FACETED</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; background: #0B0D12; border-radius: 10px; padding: 8px;">{{ compareInk }}<div style="font-size: 9px; letter-spacing: .12em; color: #8B90A0;">INK &amp; SPORE</div></div>
+      </div>
+    </div>
+    <div style="background: #14171F; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 17px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #0B0D12; background: #D9A441; border-radius: 4px; padding: 3px 7px;">4C</span><h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 24px; margin: 0;">Sizes and states</h3></div>
+      <div><div style="font-size: 10px; letter-spacing: .15em; color: #8B90A0; margin-bottom: 9px;">96 / 56 / 42PX — HATCH + GRAIN DROP BELOW 90PX</div><div style="display: flex; gap: 18px; align-items: flex-end;">{{ sizeRow }}</div></div>
+      <div><div style="font-size: 10px; letter-spacing: .15em; color: #8B90A0; margin-bottom: 9px;">SELECTED CREATURE ACROSS FOUR STATES</div><div style="display: flex; gap: 9px; align-items: flex-end;">{{ ladder }}</div></div>
+      <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 12px; font-size: 12px; line-height: 1.5; color: #8B90A0;"><span style="color: #7FE7B4;">Exports</span> · 60 deterministic standalone SVGs cover both surfaces, with semantic <span style="font-family: 'IBM Plex Mono', monospace;">data-group</span> attributes and unique definition IDs. See the adjacent integration guide for the state/style filename contract.</div>
+    </div>
+  </section>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1364,&quot;height&quot;:1900},&quot;grain&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;on&quot;,&quot;off&quot;],&quot;default&quot;:&quot;on&quot;,&quot;tsType&quot;:&quot;'on'|'off'&quot;,&quot;section&quot;:&quot;Surface&quot;},&quot;idle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;off&quot;,&quot;subtle&quot;],&quot;default&quot;:&quot;off&quot;,&quot;tsType&quot;:&quot;'off'|'subtle'&quot;,&quot;section&quot;:&quot;Motion&quot;}}">
+class Component extends DCLogic {
+  state = { momentum: .88, vitality: .91, volatility: .27, streak: 14, neglect: 0, level: 8, hero: 'beaver', surface: 'ink-spore', seed: 'r4-ink' };
+
+  onSignal = (e) => this.setState({ [e.target.name]: parseFloat(e.target.value) });
+  onPreset = (e) => {
+    const p = window.CreatureLab4.PRESETS[e.currentTarget.value];
+    if (p) this.setState(Object.assign({}, p, { seed: 'r4-' + e.currentTarget.value }));
+  };
+  onSurface = (e) => this.setState({ surface: e.currentTarget.value });
+  pick = (key) => () => this.setState({ hero: key });
+
+  node(d, i) {
+    const props = Object.assign({ key: d.k || ('n' + i) }, d.a);
+    return React.createElement(d.t, props, d.c ? d.c.map(this.node, this) : null);
+  }
+
+  vitalsFor(key, override) {
+    const s = Object.assign({}, this.state, override || {});
+    return window.CreatureLab4.vitals({ momentum: s.momentum, vitality: s.vitality, volatility: s.volatility, streak: s.streak, neglect: s.neglect, level: s.level, seed: s.seed + '|' + key });
+  }
+
+  sprite(key, px, override, uid, surface) {
+    const L = window.CreatureLab4, v = this.vitalsFor(key, override);
+    const style = surface || this.state.surface;
+    const out = L.render(key, v, { style, detail: px > 90 ? 'hi' : 'lo', grain: this.props.grain !== 'off', facets: 3, uid: (uid || '') + px });
+    const kids = [];
+    if (out.defs.length) kids.push(React.createElement('defs', { key: 'defs' }, out.defs.map(this.node, this)));
+    out.nodes.forEach((n, i) => kids.push(this.node(n, i)));
+    const svg = React.createElement('svg', { viewBox: '0 0 ' + L.W + ' ' + L.H, width: px, height: Math.round(px * L.H / L.W), style: { display: 'block', overflow: 'visible' } }, kids);
+    if (this.props.idle !== 'subtle') return svg;
+    return React.createElement('div', { style: { animation: 'ffIdle 4.8s ease-in-out infinite' } }, svg);
+  }
+
+  label(text, node, w) {
+    return React.createElement('div', { key: text, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' } }, [
+      React.createElement('div', { key: 'n', style: { width: w + 'px', display: 'flex', justifyContent: 'center' } }, node),
+      React.createElement('div', { key: 't', style: { fontFamily: 'IBM Plex Mono, monospace', fontSize: '8.5px', letterSpacing: '.08em', color: '#6E7382' } }, text)
+    ]);
+  }
+
+  renderVals() {
+    const L = window.CreatureLab4;
+    if (!L) return {};
+    const s = this.state, hero = L.DOMAINS[s.hero] ? s.hero : 'beaver', v = this.vitalsFor(hero), st = L.STATES[v.state];
+    const sig = L.SIGNALS.map((x) => ({ id: x.id, label: x.label, hint: x.hint, min: x.min, max: x.max, step: x.step, value: s[x.id], display: x.step < 1 ? (+s[x.id]).toFixed(2) : String(s[x.id]) + (x.id === 'level' ? ' · tier ' + ['I','II','III'][v.tier - 1] : 'd') }));
+    const readout = [
+      { label: 'state', val: st.label.toLowerCase(), note: st.note, tint: st.color },
+      { label: 'hatch pitch', val: (5.2 - v.density * 2.7).toFixed(2) + 'px', note: 'tightens as vitality falls', tint: '#E9E2D0' },
+      { label: 'spores', val: String(v.spores), note: 'count tracks emissive momentum', tint: '#9DE6D8' },
+      { label: 'outline', val: '1.65px', note: 'constant at hero scale', tint: '#E9E2D0' },
+      { label: 'gold', val: (v.gold * 100).toFixed(0) + '%', note: 'streak-driven metal accents', tint: '#D9A441' },
+      { label: 'lion power', val: (.58 + .42 * v.bulk).toFixed(2), note: 'always broad; streak adds definition', tint: '#FF8A6B' },
+      { label: 'panda joy', val: v.joy.toFixed(2), note: 'gourd fill, smile and motes', tint: '#F2CD7E' },
+      { label: 'beaver kit', val: v.toolCount + ' tools · ' + v.stickCount + ' sticks', note: 'shared build signals for both surfaces', tint: '#9DE6D8' }
+    ];
+    const sizeRow = [96,56,42].map((px) => this.label(px + 'PX', this.sprite(hero, px, null, 'sz'), Math.max(px, 46)));
+    const ladder = ['radiant','steady','slipping','dormant'].map((key) => this.label(key.toUpperCase(), this.sprite(hero, 112, L.PRESETS[key], 'ld' + key), 112));
+    return {
+      sig, readout, onSignal: this.onSignal, onPreset: this.onPreset, onSurface: this.onSurface,
+      surfaces: [
+        { id: 'ink-spore', label: 'Ink & Spore', color: s.surface === 'ink-spore' ? '#0B0D12' : '#E9E2D0', bg: s.surface === 'ink-spore' ? '#D9A441' : '#1E222C', bd: s.surface === 'ink-spore' ? '#D9A441' : 'rgba(233,226,208,.12)' },
+        { id: 'faceted', label: 'Faceted', color: s.surface === 'faceted' ? '#0B0D12' : '#E9E2D0', bg: s.surface === 'faceted' ? '#D9A441' : '#1E222C', bd: s.surface === 'faceted' ? '#D9A441' : 'rgba(233,226,208,.12)' }
+      ],
+      presets: ['radiant','steady','drifting','slipping','dormant'].map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1) })),
+      onHeroSquirrel: this.pick('squirrel'), onHeroLion: this.pick('lion'), onHeroBird: this.pick('bird'), onHeroBard: this.pick('panda'), onHeroBeaver: this.pick('beaver'),
+      heroLion: this.sprite('lion', 270, null, 'hero'), heroBard: this.sprite('panda', 270, null, 'hero'), heroBeaver: this.sprite('beaver', 270, null, 'hero'),
+      heroSquirrel: this.sprite('squirrel', 180, null, 'row'), heroBird: this.sprite('bird', 180, null, 'row'),
+      compareFaceted: this.sprite(hero, 228, null, 'cmpF', 'faceted'), compareInk: this.sprite(hero, 228, null, 'cmpI', 'ink-spore'),
+      sizeRow, ladder
+    };
+  }
+}
+</script>
+</body>
+</html>

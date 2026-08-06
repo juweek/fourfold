@@ -6,10 +6,13 @@ import { DOMAIN_META, DOMAINS } from "@/lib/domains";
 import type { Domain, DomainProgress } from "@/lib/types";
 import { GardenScene } from "./GardenScene";
 import { MotifGlyph } from "./MotifGlyph";
+import { RadarChart } from "./RadarChart";
 
-type HistoryDay = { date: string; future: boolean; score: number | null; plannedPoints: number; earnedPoints: number; domains: Record<Domain, { score: number | null; xp: number }> };
+type DomainDay = { score: number | null; xp: number; completedTasks: number };
+type HistoryDay = { date: string; future: boolean; score: number | null; plannedPoints: number; earnedPoints: number; domains: Record<Domain, DomainDay> };
 type Weekly = { week: number; party: number | null } & Record<Domain, number | null>;
-type HistoryData = { days: HistoryDay[]; weekly: Weekly[]; progress: DomainProgress[]; today: string };
+type HistoryMonth = { month: string; completedTasks: number; domains: Record<Domain, number> };
+type HistoryData = { days: HistoryDay[]; recentDays: HistoryDay[]; months: HistoryMonth[]; weekly: Weekly[]; progress: DomainProgress[]; today: string };
 
 function heatColor(value: number | null, future: boolean, domain?: Domain) {
   if (future) return "rgba(233,226,208,.025)";
@@ -53,20 +56,8 @@ function TrendChart({ weekly }: { weekly: Weekly[] }) {
   );
 }
 
-function Radar({ progress }: { progress: DomainProgress[] }) {
-  const level = (domain: Domain) => progress.find((item) => item.domain === domain)?.level ?? 1;
-  const radarDomains: Domain[] = ["work", "finance", "body", "gourmet"];
-  const values = radarDomains.map(level);
-  const center = 100, radius = 72;
-  const points = [[100, center - radius * values[0] / 10], [center + radius * values[1] / 10, 100], [100, center + radius * values[2] / 10], [center - radius * values[3] / 10, 100]];
-  return (
-    <svg className="radar" viewBox="0 0 200 200" role="img" aria-label="Party balance by member level">
-      {[.25,.5,.75,1].map((scale) => <polygon key={scale} points={`100,${100-radius*scale} ${100+radius*scale},100 100,${100+radius*scale} ${100-radius*scale},100`} fill="none" stroke="rgba(233,226,208,.09)" />)}
-      <polygon points={points.map((entry) => entry.join(",")).join(" ")} fill="rgba(217,164,65,.15)" stroke="#D9A441" strokeWidth="2"/>
-      {points.map(([x,y], index) => <circle key={index} cx={x} cy={y} r="4" fill={DOMAIN_META[radarDomains[index]].color}/>) }
-      <text x="100" y="12" textAnchor="middle">Vesper</text><text x="193" y="103" textAnchor="end">Aurelia</text><text x="100" y="196" textAnchor="middle">Ari</text><text x="7" y="103">Moss</text>
-    </svg>
-  );
+function dayRadarValues(day: HistoryDay) {
+  return Object.fromEntries(DOMAINS.map((domain) => [domain, day.domains[domain].completedTasks])) as Record<Domain, number>;
 }
 
 export function HistoryModal({ onClose }: { onClose: () => void }) {
@@ -78,7 +69,7 @@ export function HistoryModal({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, [onClose]);
-  const pastDays = useMemo(() => data?.days.filter((day) => !day.future && (day.plannedPoints > 0 || day.earnedPoints > 0)).slice(-14).reverse() ?? [], [data]);
+  const pastDays = useMemo(() => data?.recentDays.filter((day) => day.plannedPoints > 0 || day.earnedPoints > 0).slice().reverse() ?? [], [data]);
   return (
     <div className="history-overlay" role="dialog" aria-modal="true" aria-labelledby="history-title">
       <div className="history-modal">
@@ -89,9 +80,16 @@ export function HistoryModal({ onClose }: { onClose: () => void }) {
         {data && <>
           <GardenScene progress={data.progress} expanded />
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Season heatmap</span><h2>The party</h2></div></div><Heatmap days={data.days}/></section>
-          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Member heatmaps</span><h2>Four paths</h2></div></div><div className="member-heatmaps">{DOMAINS.map((domain) => <div key={domain}><h3 style={{ color: DOMAIN_META[domain].light }}><MotifGlyph domain={domain}/>{DOMAIN_META[domain].name}</h3><Heatmap days={data.days} domain={domain} compact/></div>)}</div></section>
+          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Member heatmaps</span><h2>Five paths</h2></div></div><div className="member-heatmaps">{DOMAINS.map((domain) => <div key={domain}><h3 style={{ color: DOMAIN_META[domain].light }}><MotifGlyph domain={domain}/>{DOMAIN_META[domain].name}</h3><Heatmap days={data.days} domain={domain} compact/></div>)}</div></section>
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Season trend</span><h2>Party + creature lines</h2></div><p>Weekly average score</p></div><TrendChart weekly={data.weekly}/></section>
-          <section className="history-section radar-section"><div><span className="eyebrow">Party balance</span><h2>Current levels</h2><p>A fuller diamond means the four paths are advancing together.</p></div><Radar progress={data.progress}/></section>
+          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Daily balance</span><h2>Last 30 days</h2></div><p>Completed tasks by path</p></div><div className="radar-grid daily-radar-grid">{data.recentDays.slice().reverse().map((day) => {
+            const label = new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            return <article className="radar-history-card" key={day.date}><time>{label}</time><RadarChart values={dayRadarValues(day)} label={day.date} compact/><span>{Object.values(day.domains).reduce((sum, domain) => sum + domain.completedTasks, 0)} done</span></article>;
+          })}</div></section>
+          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Monthly balance</span><h2>Month totals</h2></div><p>Every completed task in the month</p></div><div className="radar-grid monthly-radar-grid">{data.months.slice().reverse().map((month) => {
+            const label = new Date(`${month.month}-01T12:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+            return <article className="radar-history-card monthly" key={month.month}><h3>{label}</h3><RadarChart values={month.domains} label={label}/><span>{month.completedTasks} completed</span></article>;
+          })}</div></section>
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Recent record</span><h2>Day by day</h2></div></div>{pastDays.length ? <div className="day-list">{pastDays.map((day) => <div key={day.date}><time>{new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</time><span>{day.earnedPoints} / {day.plannedPoints} pts</span><strong>{day.score === null ? "—" : `${day.score}%`}</strong></div>)}</div> : <p className="empty-copy">Your story starts today.</p>}</section>
         </>}
       </div>

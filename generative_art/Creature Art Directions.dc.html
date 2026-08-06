@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0E1015; }
+  a { color: #D9A441; text-decoration: none; border-bottom: 1px solid rgba(217,164,65,.35); }
+  a:hover { color: #F2CD7E; border-bottom-color: rgba(242,205,126,.7); }
+  input[type=range] { accent-color: #D9A441; }
+  @keyframes ffBob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(calc(var(--ffBob, 3px) * -1)) } }
+  @keyframes ffSway { 0%, 100% { transform: rotate(calc(var(--ffSway, 2deg) * -1)) } 50% { transform: rotate(var(--ffSway, 2deg)) } }
+  @keyframes ffDrift { 0%, 100% { transform: rotate(-9deg) } 50% { transform: rotate(9deg) } }
+  @keyframes ffTwinkle { from { opacity: .55 } to { opacity: 1 } }
+  @keyframes ffFall { from { transform: translateY(-14px); opacity: 0 } 20% { opacity: .8 } to { transform: translateY(26px); opacity: 0 } }
+  @keyframes ffTilt { 0%, 100% { transform: rotateY(-11deg) } 50% { transform: rotateY(11deg) } }
+  @keyframes ffFlapL { 0%, 100% { transform: rotate(calc(var(--ffFlap, 8deg) * -1)) scaleY(1) } 50% { transform: rotate(var(--ffFlap, 8deg)) scaleY(.94) } }
+  @keyframes ffFlapR { 0%, 100% { transform: rotate(var(--ffFlap, 8deg)) scaleY(1) } 50% { transform: rotate(calc(var(--ffFlap, 8deg) * -1)) scaleY(.94) } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+</style>
+<script src="creature-lab.js"></script>
+<script src="creature-lab2.js"></script>
+</helmet>
+
+<div style="width: max-content; padding: 46px 48px 70px; background: #0E1015; font-family: Inter, system-ui, sans-serif; color: #E9E2D0;">
+
+  <div style="display: flex; flex-direction: column; gap: 26px; max-width: 1268px; margin-bottom: 40px;">
+    <div style="display: flex; align-items: baseline; gap: 16px;">
+      <div style="font-family: Fraunces, serif; font-size: 13px; letter-spacing: .34em; color: #D9A441;">FOURFOLD</div>
+      <div style="font-size: 12px; letter-spacing: .18em; color: #8B90A0;">GENERATIVE CREATURE ART · ROUNDS 1–2</div>
+    </div>
+    <h1 style="font-family: Fraunces, serif; font-weight: 500; font-size: 46px; line-height: 1.06; margin: 0; max-width: 20ch; text-wrap: pretty;">Four ways to draw a party that knows how your month went.</h1>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; font-size: 14.5px; line-height: 1.62; color: #C6C0B0; max-width: 1268px;">
+      <p style="margin: 0;">All four directions render from <em style="color: #E9E2D0; font-style: normal;">one shared skeleton per creature</em> — a small set of primitives plus one procedural signature per character. Nothing is hand-traced. The detail is emitted by code, which is what makes it generative and what lets the same file scale from 42px in a card to 240px in the garden.</p>
+      <p style="margin: 0;">Raw history goes in; codified drawing properties come out. Six signals — momentum, vitality, volatility, streak, days idle, level — resolve into thirteen properties that every renderer reads. All four cards below are driven by the same numbers, so what you are comparing is rendering, not data.</p>
+      <p style="margin: 0;">Each signature element plots real history. The Spellcaster's constellation is one star per task closed this week. The Summoner's plants are one per streak day, its tail volume is 30-day XP. The Warrior's mane count and length are 60-day mass. The Scholar's ledger line is the actual 30-day score trend. The art is the chart.</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 372px 1fr; gap: 30px; background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 26px 28px; max-width: 1268px; margin-bottom: 34px;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">SIGNALS — TRAILING TASK DATA</div>
+      <div style="display: flex; flex-direction: column; gap: 13px;">
+        <sc-for list="{{ sig }}" as="s" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center;">
+            <div style="font-size: 13px; font-weight: 500;">{{ s.label }}</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #D9A441;">{{ s.display }}</div>
+            <input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" name="{{ s.id }}" onInput="{{ onSignal }}" style="grid-column: 1 / -1; width: 100%; height: 3px; margin: 2px 0 0; background: #232735; border-radius: 2px; appearance: none; -webkit-appearance: none; outline: none;">
+            <div style="grid-column: 1 / -1; font-size: 11px; color: #6E7382;">{{ s.hint }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 9px;">
+        <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">STATE GROUPINGS — PRESETS</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{ presets }}" as="p" hint-placeholder-count="6">
+            <button type="button" value="{{ p.id }}" onClick="{{ onPreset }}" style="font-family: Inter, sans-serif; font-size: 12.5px; color: #E9E2D0; background: #232735; border: 1px solid rgba(233,226,208,.1); border-radius: 999px; padding: 6px 14px; cursor: pointer;" style-hover="border-color: rgba(217,164,65,.6); color: #F2CD7E;">{{ p.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+          <sc-for list="{{ cast }}" as="c" hint-placeholder-count="4">
+            <button type="button" value="{{ c.key }}" onClick="{{ onHero }}" style="font-family: Inter, sans-serif; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #E9E2D0; background: {{ c.bg }}; border: 1px solid {{ c.bd }}; border-radius: 8px; padding: 6px 12px; cursor: pointer;" style-hover="border-color: rgba(233,226,208,.35);">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ c.dot }};"></span>{{ c.name }}
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 9px;">
+        <div style="font-size: 11px; letter-spacing: .2em; color: #8B90A0;">CODIFIED DRAWING PROPERTIES — LIVE</div>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: rgba(233,226,208,.07); border: 1px solid rgba(233,226,208,.07); border-radius: 10px; overflow: hidden;">
+          <sc-for list="{{ readout }}" as="d" hint-placeholder-count="18">
+            <div style="background: #12141A; padding: 9px 11px 10px; display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: {{ d.tint }};">{{ d.val }}</div>
+              <div style="font-size: 11px; color: #E9E2D0;">{{ d.label }}</div>
+              <div style="font-size: 10px; color: #6E7382; line-height: 1.35;">{{ d.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 22px; margin-bottom: 46px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; max-width: 1268px;">
+      <div style="display: flex; align-items: baseline; gap: 14px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #E9E2D0; border-radius: 4px; padding: 3px 8px;">ROUND 2</span>
+        <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 30px; margin: 0;">Anime rendering, biotech surface, new cast</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; font-size: 14px; line-height: 1.6; color: #C6C0B0;">
+        <p style="margin: 0;">The anatomy engine is rebuilt underneath all four. Silhouettes are smooth curves through sampled radii rather than stacked ellipses; hair, limbs, fronds, feathers and antennae are tapered ribbons with a real width profile; eyes are proper anime eyes with iris banding, twin highlights and a weighted lid. That alone is most of the jump from "cute vector" to "illustrated".</p>
+        <p style="margin: 0;">Shading is now a hard-edged cel terminator computed per form plus a rim light on the lit arc — the Pokémon key-art read. Biotech comes from bioluminescent nodes, translucent membranes, vein networks and spores, all data-driven. The four cards differ only in surface treatment; the creatures underneath are identical.</p>
+        <p style="margin: 0;">Cast: <strong style="color: #B9AEFF; font-weight: 500;">Moth Archivist</strong> (Work — data written into wing eyespots) · <strong style="color: #34C784; font-weight: 500;">Squirrel Summoner</strong> (paint-dipped tail, four plant species, moss) · <strong style="color: #E4593D; font-weight: 500;">Lion Warrior</strong> (Blanka build, wild multi-hue mane) · <strong style="color: #D9A441; font-weight: 500;">Bird Scholar</strong> · <strong style="color: #E4699F; font-weight: 500;">Panda Bard</strong> (Enjoyment — jewellery, smile, aura). Your note on the data spellcaster cut off mid-sentence, so the Moth is my placeholder for it.</p>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 620px); gap: 28px;">
+
+      <div id="2a" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">2a</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Cel Bloom</h3>
+          <span style="font-size: 12px; color: #8B90A0;">anime cel shading · rim light · bloom</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Flat base, one hard cel shadow per form, a hot rim light along the lit edge, and blurred bloom on anything emissive. This is the cleanest anime read and the cheapest of the four to run.</p>
+        <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+          <div style="background: radial-gradient(circle at 50% 38%, #1B1F2A 0%, #0E1015 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 10px; display: flex; justify-content: center;">{{ heroE }}</div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">FULL CAST AT 56PX</div>
+              <div style="display: flex; gap: 8px; align-items: flex-end;">{{ rowE }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+              <div>cel terminator width → fatigue</div>
+              <div>rim brightness → vitality</div>
+              <div>mane curl + bulk → streak</div>
+              <div>bloom radius → momentum</div>
+              <div>smile + aura notes → joy</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+          <div><span style="color: #7FE7B4;">Cost</span> · 260–420 paths at hero, ~70 at 56px, no filters below 90px. CSS transforms only; flattens to PNG for email.</div>
+          <div><span style="color: #7FE7B4;">Risk · low</span> · the production-safe pick. Everything below is this plus a surface.</div>
+        </div>
+      </div>
+
+      <div id="2b" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">2b</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Ink &amp; Spore</h3>
+          <span style="font-size: 12px; color: #8B90A0;">manga plate · hatched cores · biolume</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Round 1's ink, now over real anatomy: a weighted outline on every form, cross-hatching confined to the cel shadow instead of the whole shape, translucent wing membranes, and bioluminescent spores. Closest to Scavengers Reign on paper.</p>
+        <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+          <div style="background: radial-gradient(circle at 50% 38%, #1D202A 0%, #0F1116 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 10px; display: flex; justify-content: center;">{{ heroF }}</div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">FULL CAST AT 56PX</div>
+              <div style="display: flex; gap: 8px; align-items: flex-end;">{{ rowF }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+              <div>hatch pitch → 1 − vitality</div>
+              <div>outline weight → constant, by design</div>
+              <div>spore count → emissive</div>
+              <div>membrane opacity → vitality</div>
+              <div>paper grain → decay</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+          <div><span style="color: #F2CD7E;">Cost</span> · 420–620 paths; hatching is clipped to shadow regions, so a clipPath per shaded form. Grain filter only above 90px.</div>
+          <div><span style="color: #F2CD7E;">Risk · medium</span> · most distinctive, least Pokémon. Reads as editorial illustration more than as a game creature.</div>
+        </div>
+      </div>
+
+      <div id="2c" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">2c</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Chitin &amp; Glass</h3>
+          <span style="font-size: 12px; color: #8B90A0;">material study · sheen · glowing seams</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Every form becomes a plate with its own light-to-dark gradient, a soft occlusion shadow, and a two-pass seam light: a blurred coloured glow under a hard white specular. Wings and membranes go translucent. The most rendered, most alien of the four.</p>
+        <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+          <div style="background: radial-gradient(circle at 50% 38%, #171B26 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 10px; display: flex; justify-content: center;">{{ heroG }}</div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">FULL CAST AT 56PX</div>
+              <div style="display: flex; gap: 8px; align-items: flex-end;">{{ rowG }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+              <div>seam glow → emissive</div>
+              <div>specular sharpness → vitality</div>
+              <div>gradient contrast → tier</div>
+              <div>ambient wash → domain colour</div>
+              <div>plate translucency → idle days</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+          <div><span style="color: #FF8A6B;">Cost</span> · one gradient def per form — 60–90 defs at hero, plus two blurred strokes per plate. Heaviest of the four; gradients and blurs are dropped wholesale below 90px, so cards fall back to 2a.</div>
+          <div><span style="color: #FF8A6B;">Risk · med-high</span> · the wow ceiling, and the only one where a mid-range phone would notice. Also drifts furthest from "quiet dark fantasy".</div>
+        </div>
+      </div>
+
+      <div id="2d" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">2d</span>
+          <h3 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Living Diorama</h3>
+          <span style="font-size: 12px; color: #8B90A0;">cel art in depth planes · parallax · fog</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">2a's cel art, split by body group into eleven depth planes inside a 3D scene — wings and mane sit forward of the torso, ornament floats in front of the face, fog fills the gaps. Drag inside the frame. This is 1d's idea with art worth parallaxing.</p>
+        <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+          <div style="background: radial-gradient(circle at 50% 38%, #1A1E29 0%, #0B0D12 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 10px; display: flex; justify-content: center; overflow: hidden;">{{ heroH }}</div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">FULL CAST AT 56PX</div>
+              <div style="display: flex; gap: 8px; align-items: flex-end;">{{ rowH }}</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+              <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+              <div>plane separation → momentum</div>
+              <div>fog density → idle days</div>
+              <div>tilt amplitude → volatility</div>
+              <div>wing flap rate → momentum</div>
+              <div>plus everything 2a reads</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+          <div><span style="color: #B9AEFF;">Cost</span> · 2a plus eleven wrappers and two fog planes; all GPU-composited, no repaint on tilt.</div>
+          <div><span style="color: #B9AEFF;">Risk · low-med</span> · strongest in the hand, weakest in a screenshot. Best used as the garden/History treatment with 2a in the cards.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: repeat(2, 620px); gap: 28px;">
+
+    <div id="1a" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">1a</span>
+        <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Living Sigil</h2>
+        <span style="font-size: 12px; color: #8B90A0;">refined flat vector · procedural ornament</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Your current language, taken seriously. Every form gets true clipped two-step shading instead of a stacked blob, and the ornament — constellation, foliage, mane, feathers — is generated per render from the vitals. Animation is CSS transform only.</p>
+      <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+        <div style="background: radial-gradient(circle at 50% 40%, #191C25 0%, #12141A 72%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 12px; display: flex; justify-content: center;">{{ heroA }}</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">LEGIBILITY AT CARD SIZE — 56PX</div>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">{{ rowA }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+            <div>saturation + lightness → pallor</div>
+            <div>ornament count → streak &amp; tier</div>
+            <div>animation period → momentum</div>
+            <div>gilding ratio → gold event</div>
+            <div>posture sag + motes → idle days</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+        <div><span style="color: #7FE7B4;">Cost</span> · 180–260 SVG nodes at hero, ~45 at 56px. Zero JS per frame. Flattens to a PNG for email without loss.</div>
+        <div><span style="color: #7FE7B4;">Risk · low</span> · closest to what ships today; the safe floor if the other three prove expensive.</div>
+      </div>
+    </div>
+
+    <div id="1b" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">1b</span>
+        <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Inked Codex</h2>
+        <span style="font-size: 12px; color: #8B90A0;">hand-inked plates · hatching · gold leaf</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Every form is redrawn as a wobbled path, so nothing is machine-round. Colour sits on a slightly misregistered plate, shadow is cross-hatching rather than a darker fill, and a streak blooms real gold leaf. The tabletop-rulebook read, generated.</p>
+      <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+        <div style="background: radial-gradient(circle at 50% 40%, #1B1E27 0%, #12141A 72%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 12px; display: flex; justify-content: center;">{{ heroB }}</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">LEGIBILITY AT CARD SIZE — 56PX</div>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">{{ rowB }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+            <div>line jitter → volatility</div>
+            <div>hatch density → 1 − vitality</div>
+            <div>plate offset → volatility</div>
+            <div>gold-leaf bloom → streak ≥ 9</div>
+            <div>paper grain → decay</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+        <div><span style="color: #F2CD7E;">Cost</span> · 400–700 nodes at hero; hatching dominates and is capped to forms above 8px. One grain filter per sprite, dropped entirely below 80px.</div>
+        <div><span style="color: #F2CD7E;">Risk · medium</span> · the SVG filter is the only real phone cost. Most illustrated of the four; also the most opinionated.</div>
+      </div>
+    </div>
+
+    <div id="1c" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">1c</span>
+        <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Constellation Field</h2>
+        <span style="font-size: 12px; color: #8B90A0;">canvas point cloud · one shared frame loop</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">The creature is not drawn, it is <em style="color: #E9E2D0; font-style: normal;">assembled</em>: points sampled from the same skeleton, one per unit of work, linked along the silhouette. Dormancy scatters the cloud; momentum tightens and quickens it. Literal, and it moves like nothing else here.</p>
+      <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+        <div style="background: radial-gradient(circle at 50% 40%, #171A22 0%, #0E1015 72%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 12px; display: flex; justify-content: center;">{{ heroC }}</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">LEGIBILITY AT CARD SIZE — 56PX</div>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">{{ rowC }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+            <div>point budget → cumulative XP</div>
+            <div>drift speed → momentum</div>
+            <div>twinkle rate → volatility</div>
+            <div>link opacity → streak</div>
+            <div>cloud fog → idle days</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+        <div><span style="color: #FF8A6B;">Cost</span> · zero DOM. 430 points hero / 150 small, one rAF for the whole page, ~1ms per sprite per frame. Pauses off-screen.</div>
+        <div><span style="color: #FF8A6B;">Risk · medium</span> · silhouette is weakest at 56px and it cannot go in email without a pre-rendered PNG. Battery cost is real if the loop never idles.</div>
+      </div>
+    </div>
+
+    <div id="1d" style="background: #1A1D26; border: 1px solid rgba(233,226,208,.08); border-radius: 14px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #12141A; background: #D9A441; border-radius: 4px; padding: 3px 7px;">1d</span>
+        <h2 style="font-family: Fraunces, serif; font-weight: 500; font-size: 26px; margin: 0;">Depth Diorama</h2>
+        <span style="font-size: 12px; color: #8B90A0;">2.5D planes · parallax · fog</span>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #C6C0B0;">Same vector art, split into five depth planes inside a CSS 3D scene. Fog sits between the planes, a rim light rides the front one, and the whole thing parallaxes on pointer or device tilt. Drag inside the frame to look around it.</p>
+      <div style="display: grid; grid-template-columns: 268px 1fr; gap: 20px; align-items: start;">
+        <div style="background: radial-gradient(circle at 50% 40%, #191C25 0%, #0E1015 74%); border: 1px solid rgba(233,226,208,.06); border-radius: 12px; padding: 12px; display: flex; justify-content: center; overflow: hidden;">{{ heroD }}</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0; margin-bottom: 8px;">LEGIBILITY AT CARD SIZE — 56PX</div>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">{{ rowD }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; line-height: 1.45; color: #C6C0B0;">
+            <div style="font-size: 10.5px; letter-spacing: .16em; color: #8B90A0;">DATA READS AS</div>
+            <div>plane separation → momentum</div>
+            <div>fog opacity → idle days</div>
+            <div>rim light → streak</div>
+            <div>tilt amplitude → volatility</div>
+            <div>plus everything 1a reads</div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(233,226,208,.08); padding-top: 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; font-size: 12px; line-height: 1.5; color: #8B90A0;">
+        <div><span style="color: #B9AEFF;">Cost</span> · 1a's node count plus five wrappers; transforms are GPU-composited, no repaint. Gyroscope needs an iOS permission prompt, so pointer and auto-orbit are the defaults.</div>
+        <div><span style="color: #B9AEFF;">Risk · low-med</span> · best wow per byte, but it loses most of its argument in a screenshot or an email.</div>
+      </div>
+    </div>
+
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1364,&quot;height&quot;:1500},&quot;motion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;calm&quot;,&quot;off&quot;],&quot;default&quot;:&quot;full&quot;,&quot;tsType&quot;:&quot;'full'|'calm'|'off'&quot;,&quot;section&quot;:&quot;Behaviour&quot;}}">
+class Component extends DCLogic {
+  state = { momentum: .62, vitality: .74, volatility: .28, streak: 5, neglect: 0, level: 4, hero: 'work', seed: 's1' };
+  cv = {};
+  clouds = {};
+
+  componentDidMount() { this.tick = this.tick.bind(this); this.raf = requestAnimationFrame(this.tick); }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); }
+
+  tick() {
+    this.raf = requestAnimationFrame(this.tick);
+    const motion = this.props.motion || 'full';
+    if (motion === 'off' && this.drewStatic) return;
+    const t = motion === 'off' ? 0 : performance.now() / 1000 * (motion === 'calm' ? .45 : 1);
+    let drew = false;
+    for (const id in this.cv) {
+      const el = this.cv[id], cl = this.clouds[id];
+      if (!el || !cl || !el.isConnected || el.__vis === false) continue;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = el.clientWidth, h = el.clientHeight;
+      if (!w || !h) continue;
+      if (el.width !== Math.round(w * dpr)) { el.width = Math.round(w * dpr); el.height = Math.round(h * dpr); }
+      const ctx = el.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      window.CreatureLab.drawCloud(ctx, cl, t, w, h);
+      drew = true;
+    }
+    if (drew) this.drewStatic = true;
+  }
+
+  onSignal = (e) => {
+    const k = e.target.name, val = parseFloat(e.target.value);
+    this.setState({ [k]: val });
+  };
+  onPreset = (e) => {
+    const p = window.CreatureLab.PRESETS[e.currentTarget.value];
+    if (p) this.setState(Object.assign({}, p, { seed: 's' + Math.floor(Math.random() * 999) }));
+  };
+  onHero = (e) => this.setState({ hero: e.currentTarget.value });
+
+  node(d, i) {
+    const props = Object.assign({ key: d.k || ('n' + i) }, d.a);
+    const kids = d.c ? d.c.map(this.node, this) : null;
+    return React.createElement(d.t, props, kids);
+  }
+
+  svg(out, px, extra) {
+    const kids = [];
+    if (out.defs && out.defs.length) kids.push(React.createElement('defs', { key: 'defs' }, out.defs.map(this.node, this)));
+    out.nodes.forEach((n, i) => kids.push(this.node(n, i)));
+    return React.createElement('svg', Object.assign({
+      viewBox: '0 0 220 240', width: px, height: Math.round(px * 240 / 220),
+      style: { display: 'block', overflow: 'visible' }
+    }, extra || {}), kids);
+  }
+
+  vitalsFor(key) {
+    const s = this.state;
+    return window.CreatureLab.vitals({
+      momentum: s.momentum, vitality: s.vitality, volatility: s.volatility,
+      streak: s.streak, neglect: s.neglect, level: s.level, seed: s.seed + '|' + key
+    });
+  }
+
+  canvas(id, px, key, v, budget) {
+    this.clouds[id] = window.CreatureLab.cloud(key, v, { budget: budget });
+    this.drewStatic = false;
+    const self = this;
+    return React.createElement('canvas', {
+      key: id,
+      style: { width: px + 'px', height: Math.round(px * 240 / 220) + 'px', display: 'block' },
+      ref: (el) => {
+        if (!el) { delete self.cv[id]; return; }
+        self.cv[id] = el;
+        if (!el.__io) {
+          el.__io = new IntersectionObserver((es) => { es.forEach((en) => { el.__vis = en.isIntersecting; }); }, { rootMargin: '120px' });
+          el.__io.observe(el);
+        }
+      }
+    });
+  }
+
+  diorama(key, v, px, interactive) {
+    const L = window.CreatureLab, A = L.styleA(key, v, { detail: px > 90 ? 'hi' : 'lo', uid: 'D' + px });
+    const h = Math.round(px * 240 / 220), C = L.skin(key, v);
+    const depths = [-78, -40, 0, 30, 56, 70];
+    const layer = (child, z, i) => React.createElement('svg', {
+      key: 'p' + i, viewBox: '0 0 220 240', width: px, height: h,
+      style: { position: 'absolute', left: 0, top: 0, transform: 'translateZ(' + z + 'px)', overflow: 'visible' }
+    }, child);
+    const kids = [];
+    if (A.defs.length) kids.push(React.createElement('svg', { key: 'defs', width: 0, height: 0, style: { position: 'absolute' } },
+      React.createElement('defs', null, A.defs.map(this.node, this))));
+    A.nodes.forEach((nd, i) => {
+      const z = depths[Math.min(i, depths.length - 1)] * (.55 + .75 * v.input.momentum);
+      if (i === 1) kids.push(React.createElement('div', {
+        key: 'fog', style: {
+          position: 'absolute', left: 0, top: 0, width: px + 'px', height: h + 'px',
+          background: 'linear-gradient(#0E1015, rgba(14,16,21,.2))', opacity: (v.fog * 1.3).toFixed(2),
+          transform: 'translateZ(' + (z + 16) + 'px)'
+        }
+      }));
+      if (i === 2 && v.gold > .3) kids.push(React.createElement('div', {
+        key: 'rim', style: {
+          position: 'absolute', left: '18%', top: '10%', width: '64%', height: '70%', borderRadius: '50%',
+          boxShadow: '0 0 46px 12px ' + C.gold, opacity: (v.gold * .22).toFixed(2), filter: 'blur(6px)',
+          transform: 'translateZ(' + (z - 6) + 'px)'
+        }
+      }));
+      kids.push(layer(this.node(nd, i), z, i));
+    });
+    const inner = React.createElement('div', {
+      key: 'in',
+      ref: (el) => { if (interactive) this.dio = el; },
+      style: {
+        position: 'relative', width: px + 'px', height: h + 'px', transformStyle: 'preserve-3d',
+        transform: 'rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg))', transition: 'transform .35s ease-out'
+      }
+    }, kids);
+    const auto = React.createElement('div', {
+      key: 'auto', style: { width: px + 'px', height: h + 'px', transformStyle: 'preserve-3d', transform: 'rotateY(-7deg)' }
+    }, inner);
+    return React.createElement('div', {
+      key: 'dio-' + key + px,
+      onPointerMove: interactive ? this.onDioMove : undefined,
+      onPointerLeave: interactive ? this.onDioLeave : undefined,
+      style: {
+        perspective: '820px', width: px + 'px', height: h + 'px',
+        cursor: interactive ? 'grab' : 'default', touchAction: 'none'
+      }
+    }, auto);
+  }
+
+  onDioMove = (e) => {
+    if (!this.dio) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    const amp = 16 + 16 * this.state.volatility;
+    this.dio.style.transition = 'none';
+    this.dio.style.setProperty('--ry', (x * amp).toFixed(1) + 'deg');
+    this.dio.style.setProperty('--rx', (-y * amp * .7).toFixed(1) + 'deg');
+  };
+  onDioLeave = () => {
+    if (!this.dio) return;
+    this.dio.style.transition = 'transform .5s ease-out';
+    this.dio.style.setProperty('--ry', '0deg');
+    this.dio.style.setProperty('--rx', '0deg');
+  };
+
+  row(style, px) {
+    const L = window.CreatureLab, self = this;
+    return L.ORDER.map((k) => {
+      const v = self.vitalsFor(k);
+      let art;
+      if (style === 'C') art = self.canvas('sm' + k, px, k, v, 150);
+      else if (style === 'D') art = React.createElement('div', {
+        style: { perspective: '400px' }
+      }, React.createElement('div', {
+        style: { transform: 'rotateY(-14deg)', transformStyle: 'preserve-3d' }
+      }, self.svg(L.styleA(k, v, { detail: 'lo', uid: 'sd' }), px)));
+      else art = self.svg((style === 'B' ? L.styleB : L.styleA)(k, v, { detail: 'lo', uid: 'sm' + style }), px);
+      return React.createElement('div', {
+        key: k, title: L.DOMAINS[k].name,
+        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }
+      }, [
+        React.createElement('div', { key: 'a', style: { width: px + 'px', display: 'flex', justifyContent: 'center' } }, art),
+        React.createElement('div', { key: 'l', style: { fontSize: '9px', letterSpacing: '.08em', color: '#6E7382', fontFamily: 'IBM Plex Mono, monospace' } }, L.DOMAINS[k].domain.split(' ')[0].toUpperCase())
+      ]);
+    });
+  }
+
+  r1key(h) { const D = window.CreatureLab2.DOMAINS[h]; return D ? D.r1 : 'work'; }
+
+  vitals2For(key) {
+    const s = this.state;
+    return window.CreatureLab2.vitals({
+      momentum: s.momentum, vitality: s.vitality, volatility: s.volatility,
+      streak: s.streak, neglect: s.neglect, level: s.level, seed: s.seed + '|' + key
+    });
+  }
+
+  svg2(out, px, extra) {
+    const L2 = window.CreatureLab2, kids = [];
+    if (out.defs && out.defs.length) kids.push(React.createElement('defs', { key: 'defs' }, out.defs.map(this.node, this)));
+    out.nodes.forEach((n, i) => kids.push(this.node(n, i)));
+    return React.createElement('svg', Object.assign({
+      viewBox: '0 0 ' + L2.W + ' ' + L2.H, width: px, height: Math.round(px * L2.H / L2.W),
+      style: { display: 'block', overflow: 'visible' }
+    }, extra || {}), kids);
+  }
+
+  art2(style, key, px) {
+    const L2 = window.CreatureLab2, detail = px > 90 ? 'hi' : 'lo';
+    const fn = style === 'F' ? L2.inkSpore : style === 'G' ? L2.chitin : L2.celBloom;
+    if (style === 'H') return this.diorama2(key, px, px > 90);
+    return this.svg2(fn(key, this.vitals2For(key), { detail, uid: style + px }), px);
+  }
+
+  diorama2(key, px, interactive) {
+    const L2 = window.CreatureLab2, v = this.vitals2For(key);
+    const A = L2.celBloom(key, v, { detail: px > 90 ? 'hi' : 'lo', uid: 'H' + px });
+    const h = Math.round(px * L2.H / L2.W), C = L2.skin(key, v);
+    const Z = { back: -86, lower: -34, wingL: -26, wingR: -26, wing: -26, body: 0, mane: 16, head: 26, face: 34, sig: 58, fx: 70 };
+    const spread = .5 + .8 * v.input.momentum;
+    const depth = (k) => { for (const g in Z) if (String(k).endsWith('G' + g)) return Z[g] * spread; return -96; };
+    const kids = [];
+    if (A.defs.length) kids.push(React.createElement('svg', { key: 'defs', width: 0, height: 0, style: { position: 'absolute' } },
+      React.createElement('defs', null, A.defs.map(this.node, this))));
+    A.nodes.forEach((nd, i) => {
+      const z = depth(nd.k);
+      if (i === 1) kids.push(React.createElement('div', {
+        key: 'fog1', style: {
+          position: 'absolute', left: 0, top: 0, width: px + 'px', height: h + 'px',
+          background: 'linear-gradient(#0B0D12, rgba(11,13,18,.15))', opacity: (v.fog * 1.4).toFixed(2), transform: 'translateZ(-60px)'
+        }
+      }));
+      kids.push(React.createElement('svg', {
+        key: 'p' + i, viewBox: '0 0 ' + L2.W + ' ' + L2.H, width: px, height: h,
+        style: { position: 'absolute', left: 0, top: 0, transform: 'translateZ(' + z.toFixed(1) + 'px)', overflow: 'visible' }
+      }, this.node(nd, i)));
+    });
+    if (v.gold > .3) kids.push(React.createElement('div', {
+      key: 'rim', style: {
+        position: 'absolute', left: '16%', top: '12%', width: '68%', height: '66%', borderRadius: '50%',
+        boxShadow: '0 0 54px 16px ' + C.glow, opacity: (v.gold * .2).toFixed(2), filter: 'blur(8px)', transform: 'translateZ(-14px)'
+      }
+    }));
+    const inner = React.createElement('div', {
+      key: 'in', ref: (el) => { if (interactive) this.dio2 = el; },
+      style: {
+        position: 'relative', width: px + 'px', height: h + 'px', transformStyle: 'preserve-3d',
+        transform: 'rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg))', transition: 'transform .35s ease-out'
+      }
+    }, kids);
+    const auto = React.createElement('div', {
+      key: 'auto', style: { width: px + 'px', height: h + 'px', transformStyle: 'preserve-3d', transform: 'rotateY(-7deg)' }
+    }, inner);
+    return React.createElement('div', {
+      key: 'dio2-' + key + px,
+      onPointerMove: interactive ? this.onDio2Move : undefined,
+      onPointerLeave: interactive ? this.onDio2Leave : undefined,
+      style: { perspective: '860px', width: px + 'px', height: h + 'px', cursor: interactive ? 'grab' : 'default', touchAction: 'none' }
+    }, auto);
+  }
+
+  onDio2Move = (e) => {
+    if (!this.dio2) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    const amp = 18 + 18 * this.state.volatility;
+    this.dio2.style.transition = 'none';
+    this.dio2.style.setProperty('--ry', (x * amp).toFixed(1) + 'deg');
+    this.dio2.style.setProperty('--rx', (-y * amp * .7).toFixed(1) + 'deg');
+  };
+  onDio2Leave = () => {
+    if (!this.dio2) return;
+    this.dio2.style.transition = 'transform .5s ease-out';
+    this.dio2.style.setProperty('--ry', '0deg');
+    this.dio2.style.setProperty('--rx', '0deg');
+  };
+
+  row2(style, px) {
+    const L2 = window.CreatureLab2, self = this;
+    return L2.ORDER.map((k) => React.createElement('div', {
+      key: k, title: L2.DOMAINS[k].name,
+      style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }
+    }, [
+      React.createElement('div', { key: 'a', style: { width: px + 'px', display: 'flex', justifyContent: 'center' } }, self.art2(style, k, px)),
+      React.createElement('div', { key: 'l', style: { fontSize: '8.5px', letterSpacing: '.06em', color: '#6E7382', fontFamily: 'IBM Plex Mono, monospace' } }, L2.DOMAINS[k].short.toUpperCase())
+    ]));
+  }
+
+  renderVals() {
+    const L = window.CreatureLab;
+    if (!L) return {};
+    const L2 = window.CreatureLab2;
+    const s = this.state, hero = L2.DOMAINS[s.hero] ? s.hero : 'moth';
+    const h1 = this.r1key(hero), v = this.vitals2For(hero), v1 = this.vitalsFor(h1);
+    const HERO = 240, SM = 56;
+    const st = L2.STATES[v.state];
+
+    const sig = L.SIGNALS.map((x) => ({
+      id: x.id, label: x.label, hint: x.hint, min: x.min, max: x.max, step: x.step, value: s[x.id],
+      display: x.step < 1 ? (+s[x.id]).toFixed(2) : String(s[x.id]) + (x.id === 'level' ? ' · tier ' + ['I', 'II', 'III'][v.tier - 1] : x.id === 'neglect' ? 'd' : 'd')
+    }));
+
+    const readout = [
+      { label: 'state', val: st.label.toLowerCase(), note: st.note, tint: st.color },
+      { label: 'sat × lum', val: v.sat.toFixed(2) + ' × ' + v.lum.toFixed(2), note: 'skin, fur and cloth colour — pallor vs vibrancy', tint: '#E9E2D0' },
+      { label: 'cycle', val: v.cycle + 's', note: 'idle loop period; every animation scales off it', tint: '#7FE7B4' },
+      { label: 'bob × sway', val: v.bob + 'px × ' + v.sway + '°', note: 'idle travel and rotation', tint: '#7FE7B4' },
+      { label: 'droop', val: v.droop + 'px', note: 'posture sag applied to the upper body', tint: '#C8A06B' },
+      { label: 'gold', val: (v.gold * 100).toFixed(0) + '%', note: 'gilding ratio; ≥ 43% is the gold event', tint: '#D9A441' },
+      { label: 'ornament', val: String(v.ornament), note: 'generated elements: stars, plants, spikes, feathers', tint: '#B9AEFF' },
+      { label: 'density', val: v.density.toFixed(2), note: 'hatching and grain — reads as fatigue', tint: '#C6C0B0' },
+      { label: 'aura', val: v.aura.toFixed(2), note: 'ambient glow behind the sprite', tint: '#F2CD7E' },
+      { label: 'rough', val: v.rough.toFixed(2), note: 'linework jitter amplitude', tint: '#C6C0B0' },
+      { label: 'dust', val: String(v.dust), note: 'falling decay motes', tint: '#8B90A0' },
+      { label: 'fog', val: v.fog.toFixed(2), note: 'depth haze between planes', tint: '#8B90A0' },
+      { label: 'tier', val: ['I', 'II', 'III'][v.tier - 1], note: 'additive layer set at Lv 1 / 4 / 7', tint: '#E9E2D0' },
+      { label: 'bulk', val: v.bulk.toFixed(2), note: 'lion: buff chest and arms vs soft belly', tint: '#FF8A6B' },
+      { label: 'curl', val: v.curl.toFixed(2), note: 'mane and frond curl amplitude', tint: '#FF8A6B' },
+      { label: 'joy', val: v.joy.toFixed(2), note: 'bard: smile arc, aura notes, closed happy eyes', tint: '#FFB3D2' },
+      { label: 'emissive', val: v.emissive.toFixed(2), note: 'bioluminescence: veins, spores, seams', tint: '#B9AEFF' },
+      { label: 'rim', val: v.rim.toFixed(2), note: 'rim-light strength on the lit arc', tint: '#E9E2D0' },
+      { label: 'species', val: String(v.species), note: 'plant species unlocked, one per streak week', tint: '#7FE7B4' }
+    ];
+
+    const cast = L2.ORDER.map((k) => {
+      const D = L2.DOMAINS[k], on = k === hero;
+      return {
+        key: k, name: D.short, dot: D.c5,
+        bg: on ? 'rgba(233,226,208,.06)' : 'transparent',
+        bd: on ? D.c5 : 'rgba(233,226,208,.1)'
+      };
+    });
+
+    return {
+      sig, readout, cast,
+      presets: [
+        { id: 'radiant', label: 'Radiant' }, { id: 'steady', label: 'Steady' }, { id: 'drifting', label: 'Drifting' },
+        { id: 'slipping', label: 'Slipping' }, { id: 'dormant', label: 'Dormant' }, { id: 'awakening', label: 'Awakening' }
+      ],
+      onSignal: this.onSignal, onPreset: this.onPreset, onHero: this.onHero,
+      heroE: this.art2('E', hero, HERO), rowE: this.row2('E', SM),
+      heroF: this.art2('F', hero, HERO), rowF: this.row2('F', SM),
+      heroG: this.art2('G', hero, HERO), rowG: this.row2('G', SM),
+      heroH: this.art2('H', hero, HERO), rowH: this.row2('H', SM),
+      heroA: this.svg(L.styleA(h1, v1, { detail: 'hi' }), HERO),
+      heroB: this.svg(L.styleB(h1, v1, { detail: 'hi' }), HERO),
+      heroC: this.canvas('hero', HERO, h1, v1, 430),
+      heroD: this.diorama(h1, v1, HERO, true),
+      rowA: this.row('A', SM), rowB: this.row('B', SM), rowC: this.row('C', SM), rowD: this.row('D', SM)
+    };
+  }
+}
+</script>
+</body>
+</html>
