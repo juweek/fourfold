@@ -1,7 +1,8 @@
 export type Domain = "work" | "gourmet" | "body" | "finance" | "life";
 export type Difficulty = "easy" | "medium" | "hard";
 export type Importance = "low" | "medium" | "high";
-export type CreatureState = "radiant" | "steady" | "drifting" | "slipping" | "dormant";
+export type TaskActionType = "reach";
+export type CreatureState = "resting" | "radiant" | "steady" | "drifting" | "slipping" | "dormant";
 
 export type Task = {
   id: string;
@@ -11,16 +12,21 @@ export type Task = {
   importance: Importance;
   points: number;
   task_date: string;
+  original_task_date: string;
+  rollover_count: number;
   is_bonus: boolean;
   completed_at: string | null;
+  archived_at: string | null;
   template_id?: string | null;
   contact_id?: string | null;
+  action_type: TaskActionType | null;
   created_at: string;
 };
 
 export type Settings = {
   id: number;
   recipient_email: string;
+  outreach_sender_email: string;
   send_time: string;
   timezone: string;
   auto_send: boolean;
@@ -42,6 +48,7 @@ export type Template = {
 export type Contact = {
   id: string;
   name: string;
+  email: string | null;
   note: string | null;
   domain: Domain;
   created_at: string;
@@ -66,6 +73,9 @@ export type DomainProgress = {
   levelStartXp: number;
   nextLevelXp: number;
   todayXp: number;
+  todayGrossXp: number;
+  todayPenaltyPercent: number;
+  overdueQuests: number;
   weekXp: number;
   paceXp: number;
 };

@@ -25,8 +25,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!body.name?.trim()) return NextResponse.json({ error: "A contact needs a name." }, { status: 400 });
+    if (body.email && !/^\S+@\S+\.\S+$/.test(body.email.trim())) return NextResponse.json({ error: "Enter a valid contact email." }, { status: 400 });
     const { data, error } = await db().from("contacts").insert({
       name: body.name.trim(),
+      email: body.email?.trim() || null,
       note: body.note?.trim() || null,
       domain: body.domain ?? "work",
     }).select("*").single();

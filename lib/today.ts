@@ -1,7 +1,8 @@
 import { DOMAIN_META, DOMAINS } from "./domains";
 import { assertNoError, db } from "./db";
-import { levelFromXp, scoreTasks, tierFromLevel, xpToReachLevel } from "./scoring";
+import { domainXpForDate, levelFromXp, scoreTasks, tierFromLevel, xpToReachLevel } from "./scoring";
 import { materializeRecurring } from "./recurring";
+import { archiveCompletedTasks, rolloverOpenTasks } from "./rollover";
 import { addDays, startOfWeek, todayInTz, weekOfSeason } from "./time";
 import type { CreatureState, DomainProgress, Settings, Task } from "./types";
 
@@ -28,32 +29,39 @@ export async function getSettings() {
 export async function getTodayData() {
   const settings = await getSettings();
   const date = todayInTz(settings.timezone);
+  await Promise.all([rolloverOpenTasks(date), archiveCompletedTasks(date)]);
   await materializeRecurring(date);
-  const [todayResult, completedResult] = await Promise.all([
+  const [todayResult, allTasksResult] = await Promise.all([
     db().from("tasks").select("*").eq("task_date", date).order("created_at", { ascending: true }),
-    db().from("tasks").select("domain,points,completed_at,task_date").not("completed_at", "is", null),
+    db().from("tasks").select("domain,points,completed_at,task_date,original_task_date,rollover_count"),
   ]);
   assertNoError(todayResult.error);
-  assertNoError(completedResult.error);
+  assertNoError(allTasksResult.error);
   const tasks = (todayResult.data ?? []) as Task[];
-  const completed = (completedResult.data ?? []) as Pick<Task, "domain" | "points" | "completed_at" | "task_date">[];
+  const allTasks = (allTasksResult.data ?? []) as Pick<Task, "domain" | "points" | "completed_at" | "task_date" | "original_task_date" | "rollover_count">[];
+  const completed = allTasks.filter((task) => task.completed_at);
   const weekStart = startOfWeek(date);
   const paceXp = 350;
   const progress: DomainProgress[] = DOMAINS.map((domain) => {
     const domainCompleted = completed.filter((task) => task.domain === domain);
-    const xp = domainCompleted.reduce((sum, task) => sum + task.points * 10, 0);
+    const completionDates = [...new Set(domainCompleted.map((task) => task.task_date))];
+    const xp = completionDates.reduce((sum, completionDate) => sum + domainXpForDate(allTasks, domain, completionDate).xp, 0);
     const level = levelFromXp(xp);
-    const todayXp = domainCompleted.filter((task) => task.task_date === date).reduce((sum, task) => sum + task.points * 10, 0);
-    const weekXp = domainCompleted.filter((task) => task.task_date >= weekStart && task.task_date <= date).reduce((sum, task) => sum + task.points * 10, 0);
+    const todayXp = domainXpForDate(allTasks, domain, date);
+    const weekXp = completionDates.filter((completionDate) => completionDate >= weekStart && completionDate <= date)
+      .reduce((sum, completionDate) => sum + domainXpForDate(allTasks, domain, completionDate).xp, 0);
     return {
       domain,
-      state: creatureState(domainCompleted, date, weekXp, paceXp),
+      state: todayXp.grossXp === 0 ? "resting" : creatureState(domainCompleted, date, weekXp, paceXp),
       xp,
       level,
       tier: tierFromLevel(level),
       levelStartXp: xpToReachLevel(level),
       nextLevelXp: level === 10 ? 9000 : xpToReachLevel(level + 1),
-      todayXp,
+      todayXp: todayXp.xp,
+      todayGrossXp: todayXp.grossXp,
+      todayPenaltyPercent: todayXp.penaltyPercent,
+      overdueQuests: todayXp.overdueQuests,
       weekXp,
       paceXp,
     };

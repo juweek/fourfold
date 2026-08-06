@@ -18,7 +18,7 @@ const SURFACE_LABELS = {
   faceted: "Faceted",
   "ink-spore": "Ink & Spore",
 };
-const STATE_ORDER = ["radiant", "steady", "drifting", "slipping", "dormant"];
+const STATE_ORDER = ["resting", "radiant", "steady", "drifting", "slipping", "dormant"];
 const GENERATED_BY = "generative_art/export-creature-sprites.mjs";
 
 const XML_ATTR = {

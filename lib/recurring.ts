@@ -30,6 +30,7 @@ export async function materializeRecurring(date: string) {
     importance: template.importance,
     points: taskPoints(template.difficulty, template.importance),
     task_date: date,
+    original_task_date: date,
     is_bonus: false,
     template_id: template.id,
   }));

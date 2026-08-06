@@ -8,7 +8,7 @@ export type Creature = "panda" | "squirrel" | "lion" | "bird" | "beaver";
 
 export function CreaturePortrait({
   creature,
-  state = "steady",
+  state = "resting",
   width = 110,
   className = "",
   style,

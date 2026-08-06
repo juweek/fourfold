@@ -22,6 +22,7 @@
     "ink-spore": "Ink & Spore"
   },
   "stateOrder": [
+    "resting",
     "radiant",
     "steady",
     "drifting",
@@ -46,9 +47,9 @@
   "counts": {
     "surfaces": 2,
     "creatures": 5,
-    "namedStates": 5,
-    "filesPerCreaturePerSurface": 6,
-    "svg": 60
+    "namedStates": 6,
+    "filesPerCreaturePerSurface": 7,
+    "svg": 70
   },
   "manifests": {
     "faceted": "faceted/manifest.json",

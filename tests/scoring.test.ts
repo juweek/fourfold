@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { levelFromXp, scoreTasks, taskPoints, tierFromLevel, xpByDomain } from "../lib/scoring.ts";
+import { domainXpForDate, levelFromXp, rolloverPenaltyPercent, scoreTasks, taskPoints, tierFromLevel, xpByDomain } from "../lib/scoring.ts";
 
 test("difficulty and importance calculate the exact points table", () => {
   assert.equal(taskPoints("easy", "low"), 1);
@@ -41,4 +41,30 @@ test("XP aggregation includes the Happy Life path", () => {
     { domain: "life", points: 12, completed_at: null },
   ]);
   assert.deepEqual(totals, { work: 40, gourmet: 0, body: 0, finance: 0, life: 60 });
+});
+
+test("overdue quests reduce that character's daily XP, not the quest's points", () => {
+  const tasks = [
+    { domain: "work" as const, points: 6, completed_at: null, task_date: "2026-08-06", original_task_date: "2026-08-05", rollover_count: 1 },
+    { domain: "work" as const, points: 4, completed_at: "now", task_date: "2026-08-06", original_task_date: "2026-08-06", rollover_count: 0 },
+  ];
+  assert.deepEqual(domainXpForDate(tasks, "work", "2026-08-06"), { xp: 32, grossXp: 40, penaltyPercent: 20, overdueQuests: 1 });
+  assert.equal(tasks[0].points, 6);
+});
+
+test("finishing a rolled quest removes its penalty on the completion day", () => {
+  const tasks = [
+    { domain: "life" as const, points: 6, completed_at: "now", task_date: "2026-08-06", original_task_date: "2026-08-05", rollover_count: 1 },
+  ];
+  assert.deepEqual(domainXpForDate(tasks, "life", "2026-08-06"), { xp: 60, grossXp: 60, penaltyPercent: 0, overdueQuests: 0 });
+});
+
+test("daily quests do not penalize XP and overdue penalties cap at 100 percent", () => {
+  const tasks = [
+    { domain: "body" as const, points: 2, completed_at: null, task_date: "2026-08-06", original_task_date: "2026-08-05", rollover_count: 0 },
+    { domain: "body" as const, points: 4, completed_at: "now", task_date: "2026-08-06", original_task_date: "2026-08-06", rollover_count: 0 },
+  ];
+  assert.equal(domainXpForDate(tasks, "body", "2026-08-06").xp, 40);
+  assert.equal(rolloverPenaltyPercent(5), 100);
+  assert.equal(rolloverPenaltyPercent(99), 100);
 });

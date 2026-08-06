@@ -19,6 +19,7 @@
     "facets": 3
   },
   "stateOrder": [
+    "resting",
     "radiant",
     "steady",
     "drifting",
@@ -32,13 +33,14 @@
     "panda",
     "beaver"
   ],
-  "svgCount": 30,
+  "svgCount": 35,
   "creatures": {
     "squirrel": {
       "name": "Squirrel Summoner",
       "domain": "Gourmet Data",
       "signature": "paint on the tail tip, one plant species per streak week, moss with 30-day XP",
       "files": {
+        "resting": "squirrel/resting.svg",
         "radiant": "squirrel/radiant.svg",
         "steady": "squirrel/steady.svg",
         "drifting": "squirrel/drifting.svg",
@@ -52,6 +54,7 @@
       "domain": "Body",
       "signature": "pumped build + mane fullness from streak, claw extension and radiant smirk from momentum",
       "files": {
+        "resting": "lion/resting.svg",
         "radiant": "lion/radiant.svg",
         "steady": "lion/steady.svg",
         "drifting": "lion/drifting.svg",
@@ -65,6 +68,7 @@
       "domain": "Finance",
       "signature": "three feather rows scale with level; the slab plots the real 30-day trend",
       "files": {
+        "resting": "bird/resting.svg",
         "radiant": "bird/radiant.svg",
         "steady": "bird/steady.svg",
         "drifting": "bird/drifting.svg",
@@ -78,6 +82,7 @@
       "domain": "Enjoyment",
       "signature": "oversized gourd fill, bronze jewellery and smile arc all read joy",
       "files": {
+        "resting": "panda/resting.svg",
         "radiant": "panda/radiant.svg",
         "steady": "panda/steady.svg",
         "drifting": "panda/drifting.svg",
@@ -91,6 +96,7 @@
       "domain": "Systems",
       "signature": "open brass gyroscope + vitality gauge; tools and stick field grow with level and streak",
       "files": {
+        "resting": "beaver/resting.svg",
         "radiant": "beaver/radiant.svg",
         "steady": "beaver/steady.svg",
         "drifting": "beaver/drifting.svg",

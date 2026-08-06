@@ -8,20 +8,14 @@ function hash(value: string) {
   return Math.abs(result);
 }
 
-function healthLabel(xp: number, pace: number) {
-  if (xp >= pace * 0.9) return "thriving";
-  if (xp >= pace * 0.45) return "steady";
-  return "resting";
-}
-
 export function GardenScene({ progress, expanded = false, paused = false }: { progress: DomainProgress[]; expanded?: boolean; paused?: boolean }) {
   const byDomain = Object.fromEntries(progress.map((item) => [item.domain, item])) as Record<string, DomainProgress>;
   const states = {
-    beaver: byDomain.work?.state ?? "steady",
-    squirrel: byDomain.gourmet?.state ?? "steady",
-    lion: byDomain.body?.state ?? "steady",
-    bird: byDomain.finance?.state ?? "steady",
-    panda: byDomain.life?.state ?? "steady",
+    beaver: byDomain.work?.state ?? "resting",
+    squirrel: byDomain.gourmet?.state ?? "resting",
+    lion: byDomain.body?.state ?? "resting",
+    bird: byDomain.finance?.state ?? "resting",
+    panda: byDomain.life?.state ?? "resting",
   } as const;
   return (
     <section className={`garden-scene ${expanded ? "garden-expanded" : ""}`} aria-label="The party's seven-day momentum garden">
@@ -50,12 +44,6 @@ export function GardenScene({ progress, expanded = false, paused = false }: { pr
         })}
       </div>
       <PartyPortrait states={states} className="garden-party" paused={paused} />
-      <div className="garden-labels">
-        {DOMAINS.map((domain) => {
-          const item = byDomain[domain];
-          return <span key={domain}><i style={{ background: DOMAIN_META[domain].color }} />{healthLabel(item?.weekXp ?? 0, item?.paceXp ?? 80)}</span>;
-        })}
-      </div>
     </section>
   );
 }

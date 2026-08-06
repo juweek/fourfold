@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { DOMAINS, SEASON_START, SEASON_WEEKS } from "@/lib/domains";
 import { assertNoError, db } from "@/lib/db";
-import { scoreTasks } from "@/lib/scoring";
+import { domainXpForDate, scoreTasks } from "@/lib/scoring";
 import { getSettings, getTodayData } from "@/lib/today";
 import { addDays, todayInTz } from "@/lib/time";
 import type { Domain, Task } from "@/lib/types";
@@ -19,13 +19,19 @@ export async function GET() {
     assertNoError(error);
     const tasks = (data ?? []) as Task[];
     const summarizeDay = (date: string) => {
-      const dayTasks = tasks.filter((task) => task.task_date === date);
+      const dayTasks = tasks.flatMap((task) => {
+        if (task.task_date === date) return [task];
+        if (task.rollover_count > 0 && task.original_task_date <= date && task.task_date > date) {
+          return [{ ...task, task_date: date, completed_at: null, is_bonus: false }];
+        }
+        return [];
+      });
       const score = scoreTasks(dayTasks);
       const domains = Object.fromEntries(DOMAINS.map((domain) => {
         const domainTasks = dayTasks.filter((task) => task.domain === domain);
         return [domain, {
           score: scoreTasks(domainTasks).total,
-          xp: domainTasks.filter((task) => task.completed_at).reduce((sum, task) => sum + task.points * 10, 0),
+          xp: domainXpForDate(tasks, domain, date).xp,
           completedTasks: domainTasks.filter((task) => task.completed_at).length,
         }];
       }));

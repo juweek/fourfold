@@ -61,16 +61,16 @@ const party = await sharp({
 await fs.writeFile(path.join(output, "party.png"), party);
 
 const generatedPartyLayout = [
-  { creature: "bird", width: 270, left: 305, top: 0 },
-  { creature: "beaver", width: 280, left: 140, top: 200 },
-  { creature: "squirrel", width: 150, left: 25, top: 330 },
-  { creature: "lion", width: 270, left: 585, top: 205 },
-  { creature: "panda", width: 350, left: 315, top: 115 },
+  { creature: "bird", width: 230, left: 24, top: 0 },
+  { creature: "beaver", width: 220, left: 42, top: 285 },
+  { creature: "panda", width: 340, left: 300, top: 190 },
+  { creature: "lion", width: 250, left: 610, top: 270 },
+  { creature: "squirrel", width: 130, left: 412, top: 105 },
 ];
 
 async function renderGeneratedParty(surface) {
   const layers = await Promise.all(generatedPartyLayout.map(async (item) => ({
-    input: await sharp(path.join(root, "public", "creatures", surface, item.creature, "steady.svg")).resize({ width: item.width }).png().toBuffer(),
+    input: await sharp(path.join(root, "public", "creatures", surface, item.creature, "resting.svg")).resize({ width: item.width }).png().toBuffer(),
     left: item.left,
     top: item.top,
   })));

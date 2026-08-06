@@ -160,11 +160,11 @@ window.CreatureLab4 = (function () {
     var i = { momentum: .72, vitality: .82, volatility: .26, streak: 9, neglect: 0, level: 6, seed: 'r3' }, k;
     for (k in inp) if (inp[k] !== undefined) i[k] = inp[k];
     var dorm = clamp(i.neglect / 7), tier = i.level >= 7 ? 3 : i.level >= 4 ? 2 : 1;
-    var state = 'steady';
-    if (i.neglect >= 5) state = 'dormant';
-    else if (i.neglect >= 3) state = 'slipping';
-    else if (i.streak >= 7 && i.momentum >= .62) state = 'radiant';
-    else if (i.neglect >= 1) state = 'drifting';
+    var state = i.resting ? 'resting' : 'steady';
+    if (!i.resting && i.neglect >= 5) state = 'dormant';
+    else if (!i.resting && i.neglect >= 3) state = 'slipping';
+    else if (!i.resting && i.streak >= 7 && i.momentum >= .62) state = 'radiant';
+    else if (!i.resting && i.neglect >= 1) state = 'drifting';
     return {
       input: i, tier: tier, state: state, dorm: dorm,
       sat: clamp(.34 + .92 * i.vitality - .66 * dorm, .05, 1.3),
@@ -187,11 +187,12 @@ window.CreatureLab4 = (function () {
       bite: clamp(.34 + .2 * (1 - i.vitality)),
       spores: Math.round(2 + 8 * clamp(.12 + .82 * i.momentum - .6 * dorm)),
       toolCount: Math.min(5, 1 + tier + Math.floor(i.streak / 7)),
-      stickCount: Math.min(10, 4 + tier + Math.floor(i.streak / 4)),
+      stickCount: Math.min(14, 7 + tier + Math.floor(i.streak / 4)),
       seed: i.seed
     };
   }
   var STATES = {
+    resting: { label: 'Resting', note: 'the new-day pose — neutral vitality with eyes closed', color: '#8B90A0' },
     radiant: { label: 'Radiant', note: 'streak ≥ 7, momentum ≥ .62 — seams lit, gold facets, ornament peaks', color: PAL.gold },
     steady: { label: 'Steady', note: 'active today or yesterday — the neutral read', color: '#8B90A0' },
     drifting: { label: 'Drifting', note: '1–2 days idle — seam glow fades, specular dulls', color: '#7FA8C8' },
@@ -199,6 +200,7 @@ window.CreatureLab4 = (function () {
     dormant: { label: 'Dormant', note: '5+ days idle — desaturated, fogged, no seam light', color: '#6E7382' }
   };
   var PRESETS = {
+    resting: { momentum: .62, vitality: .78, volatility: .3, streak: 5, neglect: 0, level: 5, resting: true },
     radiant: { momentum: .95, vitality: .95, volatility: .18, streak: 18, neglect: 0, level: 9 },
     steady: { momentum: .62, vitality: .78, volatility: .3, streak: 5, neglect: 0, level: 5 },
     drifting: { momentum: .38, vitality: .6, volatility: .45, streak: 0, neglect: 2, level: 4 },
@@ -231,7 +233,7 @@ window.CreatureLab4 = (function () {
 
   /* ---------- anime eye, angular ---------- */
   function eyeParts(P, x, y, r, mood, v, flip) {
-    var sh = flip ? -1 : 1, closed = (mood === 'happy' && v.joy > .84) || v.dorm > .82, lod = P.lod;
+    var sh = flip ? -1 : 1, closed = v.state === 'resting' || (mood === 'happy' && v.joy > .84) || v.dorm > .82, lod = P.lod;
     function push(o, feature) { o.z = 7; o.grp = 'face'; o.mat = 'flat'; o.feature = feature || 'eye-essential'; P.parts.push(o); }
     if (closed) {
       push({ k: 'p', d: 'M' + (x - r) + ',' + (y + r * .1) + ' Q' + x + ',' + (y - r * (mood === 'happy' ? .95 : .2)) + ' ' + (x + r) + ',' + (y + r * .1), tone: 'eye', sw: r * .34, cap: 'round', fill: false });
@@ -478,8 +480,8 @@ window.CreatureLab4 = (function () {
       pl([[18, 116], [31, 115], [32, 125], [19, 128]], 'dark', 1, 'back', { mat: 'flat' });
       for (i = 0; i < (FULL ? 4 : 2); i++) pl(ribbon([[33 + i * 2.6, 210], [23 + i * 1.4, 124]], .62, .5), 'boneD', 1, 'back', { mat: 'flat', op: .55 });
       // The gourd is deliberately larger than the lute body and leads the silhouette.
-      sm(ring(180, 184, 29, 36, null, 12, r, .02), 'sake', 2, 'lower');
-      sm(ring(178, 151, 18, 25, null, 11, r, .015), 'sake', 2, 'lower');
+      sm(ring(180, 184, 29, 36, null, 12, r, .02), 'wood', 2, 'lower');
+      sm(ring(178, 151, 18, 25, null, 11, r, .015), 'wood', 2, 'lower');
       pl([[169, 123], [186, 122], [188, 136], [168, 137]], 'wood', 2, 'lower', { mat: 'plate' });
       pl([[166, 117], [189, 116], [190, 124], [166, 126]], 'dark', 2, 'lower', { mat: 'flat' });
       pl(ribbon([[164, 145], [148, 158], [146, 181]], 2.5, 1.9), 'c7', 2, 'lower', { mat: 'flat' });
@@ -533,8 +535,8 @@ window.CreatureLab4 = (function () {
     /* ====================== RECLINING BEAVER ENGINEER ====================== */
     if (key === 'beaver') {
       var charge = v.emissive, toolN = FULL ? v.toolCount : Math.min(2, v.toolCount);
-      var stickN = FULL ? v.stickCount : Math.min(5, v.stickCount);
-      var stickBases = [16, 33, 51, 91, 174, 192, 208];
+      var stickN = FULL ? v.stickCount : Math.min(7, v.stickCount);
+      var stickBases = [12, 27, 43, 59, 78, 94, 158, 174, 190, 207];
       pl(ring(112, 229, 91, 8, null, 11), 'shadow', 0, 'back', { mat: 'flat' });
 
       // A workshop-like twig field grows with level and streak, echoing the squirrel garden.

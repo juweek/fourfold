@@ -14,8 +14,12 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+    if (!/^\S+@\S+\.\S+$/.test(body.recipient_email ?? "") || !/^\S+@\S+\.\S+$/.test(body.outreach_sender_email ?? "")) {
+      return NextResponse.json({ error: "Enter valid briefing and outreach email addresses." }, { status: 400 });
+    }
     const updates = {
-      recipient_email: body.recipient_email,
+      recipient_email: body.recipient_email.trim(),
+      outreach_sender_email: body.outreach_sender_email.trim(),
       send_time: body.send_time,
       timezone: body.timezone,
       auto_send: Boolean(body.auto_send),

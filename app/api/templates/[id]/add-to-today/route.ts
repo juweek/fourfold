@@ -23,6 +23,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       importance: item.importance,
       points: taskPoints(item.difficulty, item.importance),
       task_date: today,
+      original_task_date: today,
       is_bonus: nowHHMMInTz(settings.timezone) > settings.send_time.slice(0, 5),
       template_id: item.id,
     }).select("*").single();

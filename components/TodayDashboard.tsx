@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Copy, History, MoreHorizontal, Plane, RefreshCw, Repeat } from "lucide-react";
+import { Copy, History, Mail, MoreHorizontal, Plane, RefreshCw, Repeat } from "lucide-react";
 import { DOMAIN_META, DOMAINS } from "@/lib/domains";
 import { scoreTasks } from "@/lib/scoring";
 import type { Difficulty, Domain, DomainProgress, Importance, Score, Settings, Task } from "@/lib/types";
@@ -13,6 +13,7 @@ import { PillSelector } from "./PillSelector";
 import { ScoreRing } from "./ScoreRing";
 import { TaskSheet } from "./TaskSheet";
 import { completedTaskValues, RadarChart } from "./RadarChart";
+import { ReachActionModal } from "./ReachActionModal";
 
 type TodayData = {
   date: string;
@@ -36,12 +37,22 @@ function withTasks(current: TodayData, tasks: Task[]): TodayData {
   return { ...current, tasks, score: scoreTasks(tasks) };
 }
 
+function TaskMetaLine({ task }: { task: Task }) {
+  const penalty = Math.min(100, task.rollover_count * 20);
+  return <span style={{ color: DOMAIN_META[task.domain].light }}>
+    <MotifGlyph domain={task.domain}/>{DOMAIN_META[task.domain].label}
+    {task.action_type === "reach" && <><i>·</i><Mail size={10}/> Reach</>}
+    {task.rollover_count > 0 && <em className="rollover-tag">Day {task.rollover_count + 1} · −{penalty}% XP</em>}
+  </span>;
+}
+
 export function TodayDashboard() {
   const [data, setData] = useState<TodayData | null>(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | Domain>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [acting, setActing] = useState<Task | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -169,7 +180,7 @@ export function TodayDashboard() {
     setTaskPending(task.id, true);
     setMenuFor(null);
     try {
-      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance }) });
+      const response = await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: task.title, domain: task.domain, difficulty: task.difficulty, importance: task.importance, action_type: task.action_type }) });
       if (!response.ok) throw new Error((await response.json()).error ?? "Could not duplicate the quest.");
       appendLocalTask(await response.json() as Task);
       setToast("Quest duplicated for today.");
@@ -216,7 +227,7 @@ export function TodayDashboard() {
 
   const openTasks = data.tasks.filter((task) => !task.completed_at);
   const earned = data.score.earnedPlannedPoints + data.score.earnedBonusPoints;
-  const taskInteractionActive = Boolean(menuFor || editing);
+  const taskInteractionActive = Boolean(menuFor || editing || acting);
   return (
     <main className={`page-shell today-page ${taskInteractionActive ? "task-interaction-active" : ""}`}>
       <div className="page-heading today-heading">
@@ -245,10 +256,10 @@ export function TodayDashboard() {
               const bonusHeading = task.is_bonus && !previous?.is_bonus;
               const pending = pendingTaskIds.has(task.id);
               return <div key={task.id}>{bonusHeading && <div className="bonus-divider"><span>Bonus</span></div>}<div className={`task-row ${task.completed_at ? "completed" : ""} ${pending ? "pending" : ""}`} aria-busy={pending}>
-                <button className="quest-check" onClick={() => toggleTask(task)} disabled={pending} aria-label={task.completed_at ? `Mark ${task.title} incomplete` : `Complete ${task.title}`}><span/></button>
-                <div className="task-main"><strong>{task.title}</strong><span style={{ color: DOMAIN_META[task.domain].light }}><MotifGlyph domain={task.domain}/>{DOMAIN_META[task.domain].label}</span></div>
+                <button className="quest-check" onClick={() => task.action_type === "reach" ? setActing(task) : toggleTask(task)} disabled={pending || Boolean(task.action_type && task.completed_at)} aria-label={task.action_type === "reach" ? (task.completed_at ? `Email sent for ${task.title}` : `Open email action for ${task.title}`) : (task.completed_at ? `Mark ${task.title} incomplete` : `Complete ${task.title}`)}><span/></button>
+                {task.action_type === "reach" ? <button type="button" className="task-main task-action-trigger" onClick={() => setActing(task)} disabled={pending || Boolean(task.completed_at)} aria-label={`Open email action for ${task.title}`}><strong>{task.title}</strong><TaskMetaLine task={task}/></button> : <div className="task-main"><strong>{task.title}</strong><TaskMetaLine task={task}/></div>}
                 <span className="task-chip">{task.difficulty[0].toUpperCase()} · {task.importance[0].toUpperCase()}</span>
-                <span className="points-badge">{task.points}</span>
+                <span className="points-badge" title={task.rollover_count > 0 ? "Full quest points are still awarded when completed." : undefined}>{task.points}</span>
                 <div className="task-menu"><button className="icon-button small" disabled={pending} onClick={() => { setMenuFor(menuFor === task.id ? null : task.id); setConfirmDelete(null); }} aria-label={`Options for ${task.title}`}><MoreHorizontal size={17}/></button>{menuFor === task.id && <div className="menu-popover"><button onClick={() => { setEditing(task); setMenuFor(null); }}>Edit</button><button onClick={() => duplicateTask(task)}><Copy size={13}/>Duplicate</button><button onClick={() => makeDaily(task)}><Repeat size={13}/>Make daily</button><button className="danger" onClick={() => confirmDelete === task.id ? deleteTask(task) : setConfirmDelete(task.id)}>{confirmDelete === task.id ? "Delete?" : "Delete"}</button></div>}</div>
               </div></div>;
             }) : <div className="empty-state"><span>✦</span><h3>No quests today.</h3><p>Add one above, or draw from the Task Bank.</p><a className="ghost-button" href="/bank">Open Task Bank</a></div>}</div>
@@ -270,6 +281,7 @@ export function TodayDashboard() {
                 <CreaturePortrait creature={meta.creature} state={item.state} width={spriteWidth} paused={taskInteractionActive}/>
                 <div className="character-info"><div><h3>{meta.name}</h3><span>{meta.className}</span></div><b>Lv {item.level}</b><div className="xp-track"><i style={{ width: `${progressPercent(item)}%` }}/></div><small>{item.xp} / {item.nextLevelXp} XP</small></div>
                 <div className="micro-progress"><span>T <b>+{item.todayXp}</b><i><em style={{ width: `${Math.min(100, item.todayXp / 1.2)}%` }}/></i></span><span>W <b>+{item.weekXp}</b><i><em style={{ width: `${Math.min(100, item.weekXp / item.paceXp * 100)}%` }}/></i></span></div>
+                {item.todayPenaltyPercent > 0 && <span className="xp-penalty-note">−{item.todayPenaltyPercent}% today · {item.overdueQuests} overdue</span>}
               </button>;
             })}
           </div>
@@ -281,6 +293,21 @@ export function TodayDashboard() {
           onClose={() => setEditing(null)}
           onSaved={(task) => { replaceLocalTask(task); setEditing(null); setToast("Quest updated."); scheduleRefresh(); }}
           onDeleted={(id) => { removeLocalTask(id); setEditing(null); setToast("Quest deleted."); scheduleRefresh(); }}
+        />
+      )}
+      {acting && (
+        <ReachActionModal
+          task={acting}
+          senderEmail={data.settings.outreach_sender_email}
+          onClose={() => setActing(null)}
+          onSent={({ task, recipient }) => {
+            replaceLocalTask(task);
+            setActing(null);
+            setPulse(true);
+            window.setTimeout(() => setPulse(false), 200);
+            setToast(`Email sent to ${recipient.name}. Quest complete · +${task.points} pts.`);
+            scheduleRefresh();
+          }}
         />
       )}
       {historyOpen && <HistoryModal onClose={() => setHistoryOpen(false)}/>} 

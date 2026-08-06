@@ -22,8 +22,10 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       importance: "medium",
       points: 2,
       task_date: today,
+      original_task_date: today,
       is_bonus: nowHHMMInTz(settings.timezone) > settings.send_time.slice(0, 5),
       contact_id: item.id,
+      action_type: "reach",
     }).select("*").single();
     assertNoError(insertError);
     return NextResponse.json(data, { status: 201 });

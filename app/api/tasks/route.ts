@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
     if (!body.title?.trim() || !domains.has(body.domain) || !difficulties.has(body.difficulty) || !importances.has(body.importance)) {
       return NextResponse.json({ error: "Please complete every task field." }, { status: 400 });
     }
+    if (body.action_type !== undefined && body.action_type !== null && body.action_type !== "reach") {
+      return NextResponse.json({ error: "That quest action is not supported." }, { status: 400 });
+    }
     const settings = await getSettings();
     const today = todayInTz(settings.timezone);
     const taskDate = body.task_date || today;
@@ -29,7 +32,9 @@ export async function POST(request: NextRequest) {
       importance,
       points: taskPoints(difficulty, importance),
       task_date: taskDate,
+      original_task_date: taskDate,
       is_bonus: isBonus,
+      action_type: body.action_type === "reach" ? "reach" : null,
     }).select("*").single();
     assertNoError(error);
     return NextResponse.json(data, { status: 201 });

@@ -6,7 +6,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const body = await request.json();
-    const { data, error } = await db().from("contacts").update(body).eq("id", id).select("*").single();
+    if (!body.name?.trim()) return NextResponse.json({ error: "A contact needs a name." }, { status: 400 });
+    if (body.email && !/^\S+@\S+\.\S+$/.test(body.email.trim())) return NextResponse.json({ error: "Enter a valid contact email." }, { status: 400 });
+    const { data, error } = await db().from("contacts").update({
+      name: body.name.trim(),
+      email: body.email?.trim() || null,
+      note: body.note?.trim() || null,
+      domain: body.domain,
+    }).eq("id", id).select("*").single();
     assertNoError(error);
     return NextResponse.json(data);
   } catch (error) {

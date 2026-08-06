@@ -12,11 +12,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     for (const field of ["title", "domain", "difficulty", "importance", "task_date"] as const) {
       if (body[field] !== undefined) updates[field] = typeof body[field] === "string" ? body[field].trim() : body[field];
     }
-    if (body.complete !== undefined) updates.completed_at = body.complete ? new Date().toISOString() : null;
-    if (body.difficulty || body.importance) {
-      const { data: current, error: currentError } = await db().from("tasks").select("difficulty,importance").eq("id", id).single();
+    if (body.action_type !== undefined) {
+      if (body.action_type !== null && body.action_type !== "reach") {
+        return NextResponse.json({ error: "That quest action is not supported." }, { status: 400 });
+      }
+      updates.action_type = body.action_type;
+    }
+    if (body.complete !== undefined) {
+      const { data: current, error: currentError } = await db().from("tasks").select("action_type").eq("id", id).single();
       assertNoError(currentError);
-      updates.points = taskPoints((body.difficulty ?? current.difficulty) as Difficulty, (body.importance ?? current.importance) as Importance);
+      if (current.action_type) {
+        return NextResponse.json({ error: "Complete this quest through its attached action." }, { status: 409 });
+      }
+      updates.completed_at = body.complete ? new Date().toISOString() : null;
+    }
+    if (body.difficulty || body.importance || body.task_date) {
+      const { data: current, error: currentError } = await db().from("tasks").select("difficulty,importance,rollover_count").eq("id", id).single();
+      assertNoError(currentError);
+      if (body.difficulty || body.importance) {
+        updates.points = taskPoints((body.difficulty ?? current.difficulty) as Difficulty, (body.importance ?? current.importance) as Importance);
+      }
+      if (body.task_date && current.rollover_count === 0) updates.original_task_date = body.task_date;
     }
     const { data, error } = await db().from("tasks").update(updates).eq("id", id).select("*").single();
     assertNoError(error);
