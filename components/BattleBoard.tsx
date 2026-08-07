@@ -243,7 +243,7 @@ export function BattleBoard() {
                     className={className}
                     style={{
                       left: `${position.x}%`, top: `${position.y}%`, width: `${position.width}%`, height: `${position.height}%`,
-                      zIndex: 5 + (tile.column + tile.row) * 2 + elevation,
+                      zIndex: 5 + (tile.column + tile.row) * 2 + elevation * 2,
                       "--tile-depth": elevation,
                       "--claim-order": claim?.order ?? 0,
                       ...(meta ? { "--domain": meta.color, "--domain-light": meta.light } : {}),

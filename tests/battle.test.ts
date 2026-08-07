@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ARENA_TILES, arenaKey, arenaPosition, battleAtmosphere, battleEnemyPlacements, battleProgress, battleTerrain, battleTerritory, enemyTier } from "../lib/battle.ts";
+import { ARENA_TILES, HERO_TILE, arenaKey, arenaPosition, battleAtmosphere, battleElevation, battleEnemyPlacements, battleProgress, battleTerrain, battleTerritory, enemyTier } from "../lib/battle.ts";
 import type { Domain, Task } from "../lib/types.ts";
 
 function quest(id: string, points: number, completed = false, domain: Domain = "work"): Task {
@@ -68,4 +68,15 @@ test("the projected square map is rectangular and its terrain is seeded by date"
   const firstDay = ARENA_TILES.map((tile) => battleTerrain(tile, "2026-08-07"));
   const secondDay = ARENA_TILES.map((tile) => battleTerrain(tile, "2026-08-08"));
   assert.notDeepEqual(firstDay, secondDay);
+});
+
+test("Pax and Aurelia receive occasional date-seeded summit stages", () => {
+  const dates = Array.from({ length: 24 }, (_, index) => `2026-08-${String(index + 1).padStart(2, "0")}`);
+  const paxElevations = dates.map((date) => battleElevation(HERO_TILE.life, date));
+  const aureliaElevations = dates.map((date) => battleElevation(HERO_TILE.finance, date));
+
+  assert.ok(paxElevations.includes(4));
+  assert.ok(aureliaElevations.includes(4));
+  assert.ok(paxElevations.some((elevation) => elevation < 4));
+  assert.ok(aureliaElevations.some((elevation) => elevation < 4));
 });

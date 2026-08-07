@@ -63,7 +63,25 @@ export function enemySpritePath(tier: EnemyTier) {
   return "/battle/crown-titan-pixel.png";
 }
 
+function featuredSummitElevation(coordinate: ArenaCoordinate, battleDate: string) {
+  const summitRoll = hash(`${battleDate}:featured-summits`) % 4;
+  const featuredDomains: Domain[] = [
+    ...(summitRoll === 1 || summitRoll === 3 ? ["life" as const] : []),
+    ...(summitRoll === 2 || summitRoll === 3 ? ["finance" as const] : []),
+  ];
+
+  for (const domain of featuredDomains) {
+    const distance = tileDistance(coordinate, HERO_TILE[domain]);
+    if (distance === 0) return 4;
+    if (distance === 1) return 2;
+  }
+  return null;
+}
+
 export function battleElevation(coordinate: ArenaCoordinate, battleDate = "evergreen") {
+  const summitElevation = featuredSummitElevation(coordinate, battleDate);
+  if (summitElevation !== null) return summitElevation;
+
   const roll = hash(`${battleDate}:${arenaKey(coordinate)}:elevation`) % 23;
   if (roll === 0) return 2;
   if (roll < 6) return 1;
@@ -75,7 +93,7 @@ export function arenaPosition(coordinate: ArenaCoordinate, battleDate = "evergre
   const height = 200 / ARENA_DIAGONAL;
   const centerX = ((coordinate.column - coordinate.row + ARENA_ROWS) / ARENA_DIAGONAL) * 100;
   const centerY = ((coordinate.column + coordinate.row + 1) / ARENA_DIAGONAL) * 100
-    - battleElevation(coordinate, battleDate) * 1.05;
+    - battleElevation(coordinate, battleDate) * 1.3;
   return { centerX, centerY, x: centerX - width / 2, y: centerY - height / 2, width, height };
 }
 
