@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Crown, RefreshCw, Shield, Skull, Sparkles, Swords } from "lucide-react";
 import {
+  ARENA_THEMES,
   ARENA_TILES,
   HERO_TILE,
+  TILE_SPRITE_RISE,
   arenaKey,
   arenaPosition,
   battleAtmosphere,
@@ -15,7 +17,10 @@ import {
   battleTerritory,
   enemySpritePath,
   enemyTier,
+  tileSpritePath,
+  tileSpriteScale,
   type ArenaCoordinate,
+  type ArenaTheme,
   type EnemyTier,
 } from "@/lib/battle";
 import { DOMAIN_META, DOMAINS } from "@/lib/domains";
@@ -31,11 +36,26 @@ const HERO_SPRITE: Record<Domain, string> = {
   finance: "/battle/heroes/aurelia-bird-pixel.png",
   life: "/battle/heroes/pax-panda-pixel.png",
 };
-const ARENA_THEMES = [
-  { id: "cinder", label: "Cinder", description: "The original dark-red siege field" },
-  { id: "grass", label: "Grass", description: "Moss, meadow, and worn earth" },
-  { id: "volcano", label: "Volcano", description: "Basalt plates over living lava" },
-] as const;
+const THEME_META: Record<ArenaTheme, { label: string; description: string }> = {
+  grass: { label: "Meadow", description: "Route grass, wildflowers and worn dirt paths" },
+  cinder: { label: "Cinder", description: "The scorched dark-red siege field" },
+  volcano: { label: "Volcano", description: "Basalt plates over living lava" },
+};
+const THEME_STORAGE_KEY = "fourfold:arena-theme";
+const COMPACT_BOARD = "(max-width: 767px)";
+
+// Phones pay for every extra tile bitmap they decode, so the board drops to the lite tile set there.
+function useBoardDetail() {
+  const [detail, setDetail] = useState<"full" | "lite">("full");
+  useEffect(() => {
+    const query = window.matchMedia(COMPACT_BOARD);
+    const sync = () => setDetail(query.matches ? "lite" : "full");
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+  return detail;
+}
 const ENEMY_NAME: Record<EnemyTier, string> = { 1: "Inkling Skirmisher", 2: "Burden Raider", 3: "Crown Titan" };
 const STATE_LABEL: Record<DomainProgress["state"], string> = {
   resting: "Awaiting orders",
@@ -48,7 +68,6 @@ const STATE_LABEL: Record<DomainProgress["state"], string> = {
 
 type EnemyPlacement = ArenaCoordinate & { delay: number; mirrored: boolean };
 type PlacedTask = { task: Task; placement: EnemyPlacement };
-type ArenaTheme = (typeof ARENA_THEMES)[number]["id"];
 
 function piecePosition(coordinate: ArenaCoordinate, battleDate: string, extras: Record<string, string | number> = {}) {
   const position = arenaPosition(coordinate, battleDate);
@@ -133,8 +152,13 @@ function ThreatLegend({ tier, label, range }: { tier: EnemyTier; label: string; 
 export function BattleBoard() {
   const [data, setData] = useState<TodaySnapshot | null>(null);
   const [error, setError] = useState("");
-  const [arenaTheme, setArenaTheme] = useState<ArenaTheme>("cinder");
+  const [arenaTheme, setArenaTheme] = useState<ArenaTheme>("grass");
+  const detail = useBoardDetail();
   const viewportRef = useRef<HTMLDivElement>(null);
+  const chooseTheme = useCallback((theme: ArenaTheme) => {
+    setArenaTheme(theme);
+    try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* private mode — the pick just won't stick */ }
+  }, []);
   const load = useCallback(async () => {
     setError("");
     try {
@@ -147,6 +171,11 @@ export function BattleBoard() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  // Read after mount rather than in the initial state so server and client markup match.
+  useEffect(() => {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved && (ARENA_THEMES as readonly string[]).includes(saved)) setArenaTheme(saved as ArenaTheme);
+  }, []);
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!data || !viewport || viewport.scrollWidth <= viewport.clientWidth) return;
@@ -203,15 +232,15 @@ export function BattleBoard() {
           <div role="group" aria-label="Arena terrain">
             {ARENA_THEMES.map((theme) => (
               <button
-                className={arenaTheme === theme.id ? "active" : ""}
+                className={arenaTheme === theme ? "active" : ""}
                 type="button"
-                aria-pressed={arenaTheme === theme.id}
-                title={theme.description}
-                onClick={() => setArenaTheme(theme.id)}
-                key={theme.id}
+                aria-pressed={arenaTheme === theme}
+                title={THEME_META[theme].description}
+                onClick={() => chooseTheme(theme)}
+                key={theme}
               >
-                <i className={`theme-swatch theme-swatch-${theme.id}`} aria-hidden="true"/>
-                {theme.label}
+                <i className={`theme-swatch theme-swatch-${theme}`} aria-hidden="true"/>
+                {THEME_META[theme].label}
               </button>
             ))}
           </div>
@@ -225,17 +254,19 @@ export function BattleBoard() {
               {ARENA_TILES.map((tile) => {
                 const position = arenaPosition(tile, data.date);
                 const elevation = battleElevation(tile, data.date);
+                const terrain = battleTerrain(tile, data.date);
                 const key = arenaKey(tile);
                 const claim = territory.claims.get(key);
                 const heroOwner = heroTileOwners.get(key);
+                const isEnemy = enemyTiles.has(key);
                 const owner = claim?.domain ?? heroOwner;
                 const meta = owner ? DOMAIN_META[owner] : null;
                 const className = [
                   "arena-tile",
-                  `terrain-${battleTerrain(tile, data.date)}`,
+                  `terrain-${terrain.variant}`,
                   `elevation-${elevation}`,
                   claim && "is-claimed",
-                  enemyTiles.has(key) && "is-enemy",
+                  isEnemy && "is-enemy",
                   heroOwner && "is-hero",
                 ].filter(Boolean).join(" ");
                 return (
@@ -244,14 +275,18 @@ export function BattleBoard() {
                     style={{
                       left: `${position.x}%`, top: `${position.y}%`, width: `${position.width}%`, height: `${position.height}%`,
                       zIndex: 5 + (tile.column + tile.row) * 2 + elevation * 2,
-                      "--tile-depth": elevation,
+                      "--tile-sprite": `url("${tileSpritePath(arenaTheme, terrain, elevation, detail)}")`,
+                      "--tile-scale": tileSpriteScale(elevation),
+                      "--tile-rise": `${-TILE_SPRITE_RISE * 100}%`,
                       "--claim-order": claim?.order ?? 0,
                       ...(meta ? { "--domain": meta.color, "--domain-light": meta.light } : {}),
                     } as CSSProperties}
                     data-owner={owner ?? "threat"}
                     aria-hidden="true"
                     key={key}
-                  />
+                  >
+                    {(claim || heroOwner || isEnemy) && <i className="tile-marker"/>}
+                  </i>
                 );
               })}
               <div className="arena-heart" aria-hidden="true"><i/><b>IV</b></div>

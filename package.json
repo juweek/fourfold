@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "npm run sprites && next build --webpack",
     "start": "next start",
     "lint": "next lint",
-    "sprites": "node scripts/render-sprites.mjs",
+    "sprites": "node scripts/render-sprites.mjs && node scripts/render-tiles.mjs",
+    "sprites:tiles": "node scripts/render-tiles.mjs",
+    "preview:arena": "node --experimental-strip-types scripts/preview-arena.mjs",
     "sprites:creature-lab": "node generative_art/export-creature-sprites.mjs",
     "sprites:ink-spore": "node generative_art/export-ink-spore.mjs",
     "test": "node --test --experimental-strip-types tests/*.test.ts"

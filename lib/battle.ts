@@ -4,6 +4,24 @@ export type EnemyTier = 1 | 2 | 3;
 export type BattleAtmosphere = "besieged" | "turning" | "ascendant";
 export type ArenaCoordinate = { column: number; row: number };
 export type TerritoryClaim = { domain: Domain; order: number; sourceTaskId: string | null };
+export type ArenaTheme = (typeof ARENA_THEMES)[number];
+export type TerrainVariant = (typeof TERRAIN_VARIANTS)[number];
+export type Terrain = { variant: TerrainVariant; roll: number };
+
+export const ARENA_THEMES = ["grass", "cinder", "volcano"] as const;
+export const TERRAIN_VARIANTS = ["plain", "wild", "bloom", "rough"] as const;
+export const ARENA_ELEVATIONS = [0, 1, 2, 3, 4] as const;
+export const TERRAIN_ROLLS = 3;
+
+// Weighted draw: open ground dominates so the set-piece tiles stay special.
+const TERRAIN_TABLE: TerrainVariant[] = ["plain", "plain", "plain", "plain", "wild", "wild", "bloom", "rough"];
+
+// Tile sprite geometry, in the logical pixels used by scripts/render-tiles.mjs.
+// Both files must agree or the art floats off its footprint.
+const TILE_FACE = 32;
+const TILE_HEADROOM = 8;
+const TILE_SKIRT = 10;
+const TILE_CLIFF_STEP = 6;
 
 const DOMAINS: Domain[] = ["work", "gourmet", "body", "finance", "life"];
 const ARENA_COLUMNS = 13;
@@ -63,43 +81,74 @@ export function enemySpritePath(tier: EnemyTier) {
   return "/battle/crown-titan-pixel.png";
 }
 
-function featuredSummitElevation(coordinate: ArenaCoordinate, battleDate: string) {
-  const summitRoll = hash(`${battleDate}:featured-summits`) % 4;
-  const featuredDomains: Domain[] = [
-    ...(summitRoll === 1 || summitRoll === 3 ? ["life" as const] : []),
-    ...(summitRoll === 2 || summitRoll === 3 ? ["finance" as const] : []),
-  ];
-
-  for (const domain of featuredDomains) {
-    const distance = tileDistance(coordinate, HERO_TILE[domain]);
-    if (distance === 0) return 4;
-    if (distance === 1) return 2;
+// Every tile belongs to whichever hero stands nearest, so the board reads as five contiguous
+// territories rather than scattered squares. Ties fall to DOMAINS order, which keeps it stable.
+const ZONE_BY_TILE = new Map<string, Domain>(ARENA_TILES.map((tile) => {
+  let owner = DOMAINS[0];
+  let nearest = Infinity;
+  for (const domain of DOMAINS) {
+    const distance = tileDistance(tile, HERO_TILE[domain]);
+    if (distance < nearest) { nearest = distance; owner = domain; }
   }
-  return null;
+  return [arenaKey(tile), owner];
+}));
+
+export function battleZone(coordinate: ArenaCoordinate) {
+  return ZONE_BY_TILE.get(arenaKey(coordinate)) ?? DOMAINS[0];
+}
+
+// A day raises one whole territory — sometimes two — so a hero and the foes at their border
+// always share a level. Heights stay at 2–3 so the lift clears the board's top margin.
+const plateauCache = new Map<string, Map<Domain, number>>();
+
+function raisedPlateaus(battleDate: string) {
+  const cached = plateauCache.get(battleDate);
+  if (cached) return cached;
+
+  const order = [...DOMAINS].sort((a, b) => hash(`${battleDate}:${a}:plateau`) - hash(`${battleDate}:${b}:plateau`));
+  const raised = new Map<Domain, number>();
+  for (let index = 0; index < (hash(`${battleDate}:plateau-count`) % 3 === 0 ? 2 : 1); index += 1) {
+    raised.set(order[index], 2 + (hash(`${battleDate}:${order[index]}:height`) % 2));
+  }
+  plateauCache.set(battleDate, raised);
+  return raised;
 }
 
 export function battleElevation(coordinate: ArenaCoordinate, battleDate = "evergreen") {
-  const summitElevation = featuredSummitElevation(coordinate, battleDate);
-  if (summitElevation !== null) return summitElevation;
-
-  const roll = hash(`${battleDate}:${arenaKey(coordinate)}:elevation`) % 23;
-  if (roll === 0) return 2;
-  if (roll < 6) return 1;
-  return 0;
+  return raisedPlateaus(battleDate).get(battleZone(coordinate)) ?? 0;
 }
+
+// A tile face is 200/ARENA_DIAGONAL percent tall, so one cliff step lifts by that same fraction.
+const ELEVATION_LIFT = (200 / ARENA_DIAGONAL) * (TILE_CLIFF_STEP / TILE_FACE);
 
 export function arenaPosition(coordinate: ArenaCoordinate, battleDate = "evergreen") {
   const width = 200 / ARENA_DIAGONAL;
   const height = 200 / ARENA_DIAGONAL;
   const centerX = ((coordinate.column - coordinate.row + ARENA_ROWS) / ARENA_DIAGONAL) * 100;
   const centerY = ((coordinate.column + coordinate.row + 1) / ARENA_DIAGONAL) * 100
-    - battleElevation(coordinate, battleDate) * 1.3;
+    - battleElevation(coordinate, battleDate) * ELEVATION_LIFT;
   return { centerX, centerY, x: centerX - width / 2, y: centerY - height / 2, width, height };
 }
 
-export function battleTerrain(coordinate: ArenaCoordinate, battleDate = "evergreen") {
-  return ["cinder", "iron", "crater", "fracture"][hash(`${battleDate}:${arenaKey(coordinate)}:terrain`) % 4];
+export function battleTerrain(coordinate: ArenaCoordinate, battleDate = "evergreen"): Terrain {
+  return {
+    variant: TERRAIN_TABLE[hash(`${battleDate}:${arenaKey(coordinate)}:terrain`) % TERRAIN_TABLE.length],
+    roll: hash(`${battleDate}:${arenaKey(coordinate)}:roll`) % TERRAIN_ROLLS,
+  };
 }
+
+// "lite" collapses the three cosmetic rolls of each terrain down to one. A phone then fetches and
+// keeps roughly a third as many tile bitmaps in memory; the field just repeats itself a bit more.
+export function tileSpritePath(theme: ArenaTheme, terrain: Terrain, elevation: number, detail: "full" | "lite" = "full") {
+  return `/battle/tiles/${theme}/${terrain.variant}-${detail === "lite" ? 0 : terrain.roll}-e${elevation}.png`;
+}
+
+// The sprite is taller than its tile footprint: headroom for grass above, soil and cliff below.
+export function tileSpriteScale(elevation: number) {
+  return (TILE_HEADROOM + TILE_FACE + TILE_SKIRT + elevation * TILE_CLIFF_STEP) / TILE_FACE;
+}
+
+export const TILE_SPRITE_RISE = TILE_HEADROOM / TILE_FACE;
 
 export function battleTerritory(tasks: Task[], battleDate = "evergreen") {
   const claims = new Map<string, TerritoryClaim>();
@@ -172,13 +221,14 @@ export function battleEnemyPlacements(tasks: Task[], territory: ReturnType<typeo
     if (!candidates.length) candidates = ARENA_TILES.filter((tile) => !HERO_KEYS.has(arenaKey(tile)) && !used.has(arenaKey(tile)));
     if (!candidates.length) break;
 
-    candidates.sort((a, b) => {
-      const frontierA = Math.min(...domainTiles.map((tile) => tileDistance(a, tile)));
-      const frontierB = Math.min(...domainTiles.map((tile) => tileDistance(b, tile)));
-      const scoreA = frontierA * 100 + tileDistance(a, HERO_TILE[task.domain]) * 4 + (hash(`${battleDate}:${task.id}:${arenaKey(a)}`) % 100) / 100;
-      const scoreB = frontierB * 100 + tileDistance(b, HERO_TILE[task.domain]) * 4 + (hash(`${battleDate}:${task.id}:${arenaKey(b)}`) % 100) / 100;
-      return scoreA - scoreB;
-    });
+    // Staying inside the domain's own zone outranks everything else: it is what keeps a quest's
+    // enemy on the same plateau as the hero it threatens.
+    const score = (tile: ArenaCoordinate) =>
+      (battleZone(tile) === task.domain ? 0 : 100000)
+      + Math.min(...domainTiles.map((claimed) => tileDistance(tile, claimed))) * 100
+      + tileDistance(tile, HERO_TILE[task.domain]) * 4
+      + (hash(`${battleDate}:${task.id}:${arenaKey(tile)}`) % 100) / 100;
+    candidates.sort((a, b) => score(a) - score(b));
 
     const coordinate = candidates[0];
     const seed = hash(`${battleDate}:${task.id}`);

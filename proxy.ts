@@ -27,5 +27,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|characters/|creatures/|sprites/|og.png).*)"],
+  // Checked-in art is not secret — keep the HMAC off the ~120 tile/sprite requests a board load makes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|battle/|characters/|creatures/|sprites/|og.png).*)"],
 };
