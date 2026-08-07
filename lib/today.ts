@@ -1,24 +1,11 @@
 import { DOMAIN_META, DOMAINS } from "./domains";
 import { assertNoError, db } from "./db";
+import { dailyCreatureState, WEEKLY_PACE_XP } from "./progress";
 import { domainXpForDate, levelFromXp, rolloverPenaltyPoints, scoreTasks, tierFromLevel, xpToReachLevel } from "./scoring";
 import { materializeRecurring } from "./recurring";
 import { archiveCompletedTasks, rolloverOpenTasks } from "./rollover";
 import { addDays, startOfWeek, todayInTz, weekOfSeason } from "./time";
-import type { CreatureState, DomainProgress, Settings, Task } from "./types";
-
-function creatureState(tasks: Pick<Task, "task_date">[], date: string, weekXp: number, paceXp: number): CreatureState {
-  const completionDates = new Set(tasks.map((task) => task.task_date));
-  const lastDate = [...completionDates].filter((item) => item <= date).sort().at(-1);
-  const neglect = lastDate ? Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${lastDate}T12:00:00Z`)) / 86_400_000) : 9;
-  let streak = 0;
-  while (completionDates.has(addDays(date, -streak))) streak += 1;
-  const momentum = weekXp / Math.max(1, paceXp);
-  if (neglect >= 5) return "dormant";
-  if (neglect >= 3) return "slipping";
-  if (streak >= 7 && momentum >= 0.62) return "radiant";
-  if (neglect >= 1) return "drifting";
-  return "steady";
-}
+import type { DomainProgress, Settings, Task } from "./types";
 
 export async function getSettings() {
   const { data, error } = await db().from("settings").select("*").eq("id", 1).single();
@@ -41,7 +28,7 @@ export async function getTodayData() {
   const allTasks = (allTasksResult.data ?? []) as Pick<Task, "domain" | "points" | "completed_at" | "task_date" | "original_task_date" | "rollover_count">[];
   const completed = allTasks.filter((task) => task.completed_at);
   const weekStart = startOfWeek(date);
-  const paceXp = 350;
+  const paceXp = WEEKLY_PACE_XP;
   const progress: DomainProgress[] = DOMAINS.map((domain) => {
     const domainCompleted = completed.filter((task) => task.domain === domain);
     const grossXp = domainCompleted.reduce((sum, task) => sum + task.points * 10, 0);
@@ -55,7 +42,7 @@ export async function getTodayData() {
     const weekXp = weekDates.reduce((sum, day) => sum + domainXpForDate(allTasks, domain, day).xp, 0);
     return {
       domain,
-      state: todayXp.grossXp === 0 ? "resting" : creatureState(domainCompleted, date, weekXp, paceXp),
+      state: dailyCreatureState(todayXp.xp, paceXp),
       xp,
       level,
       tier: tierFromLevel(level),

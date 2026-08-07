@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-export type ArtStyle = "faceted" | "ink-spore";
+export type ArtStyle = "faceted" | "ink-spore" | "sprite";
 
 type ArtStyleContextValue = {
   artStyle: ArtStyle;
@@ -16,7 +16,7 @@ export function ArtStyleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("ff_art_style");
-    if (saved === "faceted" || saved === "ink-spore") setArtStyleState(saved);
+    if (saved === "faceted" || saved === "ink-spore" || saved === "sprite") setArtStyleState(saved);
   }, []);
 
   const value = useMemo<ArtStyleContextValue>(() => ({
@@ -42,6 +42,7 @@ export function ArtStyleToggle() {
     <div className="art-style-toggle" role="group" aria-label="Creature art style">
       <button type="button" className={artStyle === "faceted" ? "active" : ""} aria-pressed={artStyle === "faceted"} onClick={() => setArtStyle("faceted")}>Faceted</button>
       <button type="button" className={artStyle === "ink-spore" ? "active" : ""} aria-pressed={artStyle === "ink-spore"} onClick={() => setArtStyle("ink-spore")}>Ink</button>
+      <button type="button" className={artStyle === "sprite" ? "active" : ""} aria-pressed={artStyle === "sprite"} onClick={() => setArtStyle("sprite")}>Sprite</button>
     </div>
   );
 }

@@ -41,6 +41,10 @@ export function addDays(date: string, amount: number) {
   return value.toISOString().slice(0, 10);
 }
 
+export function daysBetween(from: string, to: string) {
+  return Math.max(0, Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000));
+}
+
 export function startOfWeek(date: string) {
   const value = new Date(`${date}T12:00:00Z`);
   const day = value.getUTCDay();

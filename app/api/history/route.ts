@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { DOMAINS, SEASON_START, SEASON_WEEKS } from "@/lib/domains";
 import { assertNoError, db } from "@/lib/db";
-import { domainXpForDate, scoreTasks } from "@/lib/scoring";
+import { completedPointsByDomain, domainXpForDate, scoreTasks } from "@/lib/scoring";
 import { getSettings, getTodayData } from "@/lib/today";
 import { addDays, todayInTz } from "@/lib/time";
 import type { Domain, Task } from "@/lib/types";
@@ -29,10 +29,12 @@ export async function GET() {
       const score = scoreTasks(dayTasks);
       const domains = Object.fromEntries(DOMAINS.map((domain) => {
         const domainTasks = dayTasks.filter((task) => task.domain === domain);
+        const completedDomainTasks = domainTasks.filter((task) => task.completed_at);
         return [domain, {
           score: scoreTasks(domainTasks).total,
           xp: domainXpForDate(tasks, domain, date).xp,
-          completedTasks: domainTasks.filter((task) => task.completed_at).length,
+          earnedPoints: completedDomainTasks.reduce((sum, task) => sum + task.points, 0),
+          completedTasks: completedDomainTasks.length,
         }];
       }));
       return { date, future: date > today, score: score.total, plannedPoints: score.plannedPoints, earnedPoints: score.earnedPlannedPoints + score.earnedBonusPoints, domains };
@@ -58,8 +60,12 @@ export async function GET() {
     }
     const months = monthKeys.map((month) => {
       const monthTasks = tasks.filter((task) => task.task_date.startsWith(month) && task.completed_at);
-      const domains = Object.fromEntries(DOMAINS.map((domain) => [domain, monthTasks.filter((task) => task.domain === domain).length]));
-      return { month, completedTasks: monthTasks.length, domains };
+      return {
+        month,
+        completedTasks: monthTasks.length,
+        earnedPoints: monthTasks.reduce((sum, task) => sum + task.points, 0),
+        pointsByDomain: completedPointsByDomain(monthTasks),
+      };
     });
     return NextResponse.json({ days, recentDays, months, weekly, progress: todayData.progress, today });
   } catch (error) {

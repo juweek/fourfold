@@ -76,3 +76,13 @@ export type DomainProgress = {
   weekXp: number;
   paceXp: number;
 };
+
+export type TodaySnapshot = {
+  date: string;
+  week: number;
+  settings: Settings;
+  tasks: Task[];
+  score: Score;
+  progress: DomainProgress[];
+  seasonProgress: number;
+};

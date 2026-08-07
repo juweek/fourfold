@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { domainXpForDate, levelFromXp, rolloverPenaltyPoints, scoreTasks, taskPoints, tierFromLevel, xpByDomain } from "../lib/scoring.ts";
+import { completedPointsByDomain, domainXpForDate, levelFromXp, rolloverPenaltyPoints, scoreTasks, taskPoints, tierFromLevel, xpByDomain } from "../lib/scoring.ts";
 
 test("difficulty and importance calculate the exact points table", () => {
   assert.equal(taskPoints("easy", "low"), 1);
@@ -41,6 +41,16 @@ test("XP aggregation includes the Happy Life path", () => {
     { domain: "life", points: 12, completed_at: null },
   ]);
   assert.deepEqual(totals, { work: 40, gourmet: 0, body: 0, finance: 0, life: 60 });
+});
+
+test("radar totals use completed points rather than completed task counts", () => {
+  const totals = completedPointsByDomain([
+    { domain: "work", points: 2, completed_at: "now" },
+    { domain: "work", points: 12, completed_at: "now" },
+    { domain: "body", points: 6, completed_at: null },
+    { domain: "life", points: 4, completed_at: "now" },
+  ]);
+  assert.deepEqual(totals, { work: 14, gourmet: 0, body: 0, finance: 0, life: 4 });
 });
 
 test("the first rollover day is free before quest-specific deductions begin", () => {

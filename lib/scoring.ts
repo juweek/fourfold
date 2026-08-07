@@ -1,4 +1,5 @@
-import { DIFFICULTY_POINTS, IMPORTANCE_MULTIPLIER } from "./domains.ts";
+import { DIFFICULTY_POINTS, DOMAINS, IMPORTANCE_MULTIPLIER } from "./domains.ts";
+import { daysBetween } from "./time.ts";
 import type { Difficulty, Domain, Importance, Score, Task } from "./types.ts";
 
 export function taskPoints(difficulty: Difficulty, importance: Importance) {
@@ -6,10 +7,6 @@ export function taskPoints(difficulty: Difficulty, importance: Importance) {
 }
 
 type XpTask = Pick<Task, "domain" | "points" | "completed_at" | "task_date" | "original_task_date" | "rollover_count">;
-
-function daysBetween(from: string, to: string) {
-  return Math.max(0, Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000));
-}
 
 export function rolloverPenaltyPoints(taskPoints: number, overdueDays: number) {
   const penaltyDays = Math.max(0, Math.floor(overdueDays) - 1);
@@ -79,12 +76,20 @@ export function tierFromLevel(level: number): 1 | 2 | 3 {
   return 1;
 }
 
-export function xpByDomain(tasks: Pick<Task, "domain" | "points" | "completed_at">[]) {
-  return tasks.reduce<Record<Domain, number>>(
-    (totals, task) => {
-      if (task.completed_at) totals[task.domain] += task.points * 10;
-      return totals;
-    },
-    { work: 0, gourmet: 0, body: 0, finance: 0, life: 0 },
-  );
+type CompletedPointTask = Pick<Task, "domain" | "points" | "completed_at">;
+
+function completedValuesByDomain(tasks: CompletedPointTask[], multiplier: number) {
+  const totals = Object.fromEntries(DOMAINS.map((domain) => [domain, 0])) as Record<Domain, number>;
+  for (const task of tasks) {
+    if (task.completed_at) totals[task.domain] += task.points * multiplier;
+  }
+  return totals;
+}
+
+export function xpByDomain(tasks: CompletedPointTask[]) {
+  return completedValuesByDomain(tasks, 10);
+}
+
+export function completedPointsByDomain(tasks: CompletedPointTask[]) {
+  return completedValuesByDomain(tasks, 1);
 }

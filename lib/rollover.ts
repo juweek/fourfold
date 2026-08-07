@@ -1,11 +1,8 @@
 import { assertNoError, db } from "./db";
+import { daysBetween } from "./time";
 import type { Task } from "./types";
 
 type RolloverCandidate = Task & { templates: { recurrence: string } | null };
-
-function daysBetween(from: string, to: string) {
-  return Math.max(0, Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000));
-}
 
 export async function rolloverOpenTasks(date: string) {
   const { data, error } = await db()

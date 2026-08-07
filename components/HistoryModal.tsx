@@ -8,10 +8,10 @@ import { GardenScene } from "./GardenScene";
 import { MotifGlyph } from "./MotifGlyph";
 import { RadarChart } from "./RadarChart";
 
-type DomainDay = { score: number | null; xp: number; completedTasks: number };
+type DomainDay = { score: number | null; xp: number; earnedPoints: number; completedTasks: number };
 type HistoryDay = { date: string; future: boolean; score: number | null; plannedPoints: number; earnedPoints: number; domains: Record<Domain, DomainDay> };
 type Weekly = { week: number; party: number | null } & Record<Domain, number | null>;
-type HistoryMonth = { month: string; completedTasks: number; domains: Record<Domain, number> };
+type HistoryMonth = { month: string; completedTasks: number; earnedPoints: number; pointsByDomain: Record<Domain, number> };
 type HistoryData = { days: HistoryDay[]; recentDays: HistoryDay[]; months: HistoryMonth[]; weekly: Weekly[]; progress: DomainProgress[]; today: string };
 
 function heatColor(value: number | null, future: boolean, domain?: Domain) {
@@ -57,7 +57,7 @@ function TrendChart({ weekly }: { weekly: Weekly[] }) {
 }
 
 function dayRadarValues(day: HistoryDay) {
-  return Object.fromEntries(DOMAINS.map((domain) => [domain, day.domains[domain].completedTasks])) as Record<Domain, number>;
+  return Object.fromEntries(DOMAINS.map((domain) => [domain, day.domains[domain].earnedPoints])) as Record<Domain, number>;
 }
 
 export function HistoryModal({ onClose }: { onClose: () => void }) {
@@ -82,13 +82,13 @@ export function HistoryModal({ onClose }: { onClose: () => void }) {
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Season heatmap</span><h2>The party</h2></div></div><Heatmap days={data.days}/></section>
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Member heatmaps</span><h2>Five paths</h2></div></div><div className="member-heatmaps">{DOMAINS.map((domain) => <div key={domain}><h3 style={{ color: DOMAIN_META[domain].light }}><MotifGlyph domain={domain}/>{DOMAIN_META[domain].name}</h3><Heatmap days={data.days} domain={domain} compact/></div>)}</div></section>
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Season trend</span><h2>Party + creature lines</h2></div><p>Weekly average score</p></div><TrendChart weekly={data.weekly}/></section>
-          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Daily balance</span><h2>Last 30 days</h2></div><p>Completed tasks by path</p></div><div className="radar-grid daily-radar-grid">{data.recentDays.slice().reverse().map((day) => {
+          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Daily balance</span><h2>Last 30 days</h2></div><p>Completed points by path</p></div><div className="radar-grid daily-radar-grid">{data.recentDays.slice().reverse().map((day) => {
             const label = new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-            return <article className="radar-history-card" key={day.date}><time>{label}</time><RadarChart values={dayRadarValues(day)} label={day.date} compact/><span>{Object.values(day.domains).reduce((sum, domain) => sum + domain.completedTasks, 0)} done</span></article>;
+            return <article className="radar-history-card" key={day.date}><time>{label}</time><RadarChart values={dayRadarValues(day)} label={day.date} compact/><span>{Object.values(day.domains).reduce((sum, domain) => sum + domain.earnedPoints, 0)} pts</span></article>;
           })}</div></section>
-          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Monthly balance</span><h2>Month totals</h2></div><p>Every completed task in the month</p></div><div className="radar-grid monthly-radar-grid">{data.months.slice().reverse().map((month) => {
+          <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Monthly balance</span><h2>Month totals</h2></div><p>Completed points by path</p></div><div className="radar-grid monthly-radar-grid">{data.months.slice().reverse().map((month) => {
             const label = new Date(`${month.month}-01T12:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-            return <article className="radar-history-card monthly" key={month.month}><h3>{label}</h3><RadarChart values={month.domains} label={label}/><span>{month.completedTasks} completed</span></article>;
+            return <article className="radar-history-card monthly" key={month.month}><h3>{label}</h3><RadarChart values={month.pointsByDomain} label={label}/><span>{month.earnedPoints} pts · {month.completedTasks} completed</span></article>;
           })}</div></section>
           <section className="history-section"><div className="section-heading"><div><span className="eyebrow">Recent record</span><h2>Day by day</h2></div></div>{pastDays.length ? <div className="day-list">{pastDays.map((day) => <div key={day.date}><time>{new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</time><span>{day.earnedPoints} / {day.plannedPoints} pts</span><strong>{day.score === null ? "—" : `${day.score}%`}</strong></div>)}</div> : <p className="empty-copy">Your story starts today.</p>}</section>
         </>}

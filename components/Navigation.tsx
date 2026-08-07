@@ -1,12 +1,13 @@
 "use client";
 
-import { Landmark, ListTodo, Settings } from "lucide-react";
+import { Landmark, ListTodo, Settings, Swords } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArtStyleToggle } from "./ArtStyleProvider";
 
 const links = [
   { href: "/", label: "Today", icon: ListTodo },
+  { href: "/battle", label: "Battle", icon: Swords },
   { href: "/bank", label: "Bank", icon: Landmark },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

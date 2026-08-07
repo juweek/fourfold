@@ -1,6 +1,6 @@
 import { DOMAIN_META, DOMAINS } from "@/lib/domains";
-import type { DomainProgress } from "@/lib/types";
-import { PartyPortrait } from "./PartyPortrait";
+import type { Domain, DomainProgress } from "@/lib/types";
+import { PartyPortrait, type CreatureStateMap } from "./PartyPortrait";
 
 function hash(value: string) {
   let result = 2166136261;
@@ -8,15 +8,21 @@ function hash(value: string) {
   return Math.abs(result);
 }
 
-export function GardenScene({ progress, expanded = false, paused = false }: { progress: DomainProgress[]; expanded?: boolean; paused?: boolean }) {
-  const byDomain = Object.fromEntries(progress.map((item) => [item.domain, item])) as Record<string, DomainProgress>;
-  const states = {
-    beaver: byDomain.work?.state ?? "resting",
-    squirrel: byDomain.gourmet?.state ?? "resting",
-    lion: byDomain.body?.state ?? "resting",
-    bird: byDomain.finance?.state ?? "resting",
-    panda: byDomain.life?.state ?? "resting",
-  } as const;
+export function GardenScene({
+  progress,
+  expanded = false,
+  paused = false,
+  activeDomain,
+  onSelectDomain,
+}: {
+  progress: DomainProgress[];
+  expanded?: boolean;
+  paused?: boolean;
+  activeDomain?: Domain;
+  onSelectDomain?: (domain: Domain) => void;
+}) {
+  const byDomain = Object.fromEntries(progress.map((item) => [item.domain, item])) as Partial<Record<Domain, DomainProgress>>;
+  const states = Object.fromEntries(DOMAINS.map((domain) => [DOMAIN_META[domain].creature, byDomain[domain]?.state ?? "resting"])) as CreatureStateMap;
   return (
     <section className={`garden-scene ${expanded ? "garden-expanded" : ""}`} aria-label="The party's seven-day momentum garden">
       <div className="garden-stars" aria-hidden="true"><i/><i/><i/><i/><i/></div>
@@ -43,7 +49,7 @@ export function GardenScene({ progress, expanded = false, paused = false }: { pr
           );
         })}
       </div>
-      <PartyPortrait states={states} className="garden-party" paused={paused} />
+      <PartyPortrait states={states} className="garden-party" paused={paused} activeDomain={activeDomain} onSelectDomain={onSelectDomain}/>
     </section>
   );
 }
