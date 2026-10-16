@@ -166,10 +166,10 @@ function categorizeItem(item: TrackerItem): Column | null {
 }
 
 const COLUMN_META = {
-  due_soon: { title: "Due soon", color: "#C85A54", bgColor: "#C85A54" },
-  waiting_on_you: { title: "Waiting on you", color: "#D4934A", bgColor: "#D4934A" },
-  reach_out: { title: "Reach out next", color: "#5FA573", bgColor: "#5FA573" },
-  waiting_on_them: { title: "Waiting on them", color: "#5B7FA5", bgColor: "#5B7FA5" },
+  due_soon: { title: "Due soon", sublabel: "next 14 days", color: "#C85A54", bgColor: "#C85A54" },
+  waiting_on_you: { title: "Waiting on you", sublabel: "drafted/needs info", color: "#D4934A", bgColor: "#D4934A" },
+  reach_out: { title: "Reach out next", sublabel: "named contact", color: "#5FA573", bgColor: "#5FA573" },
+  waiting_on_them: { title: "Waiting on them", sublabel: "applied", color: "#5B7FA5", bgColor: "#5B7FA5" },
 };
 
 const MAX_CARDS_PER_COLUMN = 8;
@@ -337,6 +337,7 @@ export function TrackerBoard() {
                   style={{ backgroundColor: meta.bgColor }}
                 >
                   <h2>{meta.title} ({columnItems.length})</h2>
+                  <p className="quest-column-sublabel">{meta.sublabel}</p>
                 </div>
                 <div className="quest-column-cards">
                   {visibleItems.map((item, idx) => {
