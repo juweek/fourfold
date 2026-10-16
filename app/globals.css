@@ -485,3 +485,81 @@ h1, h2, h3 { font-family: var(--font-fraunces), Georgia, serif; font-weight: 550
   .character-grid{grid-template-columns:1fr}.character-card{min-height:116px}.today-radar-card{grid-template-columns:1fr 135px}.today-radar-card .radar{width:135px}.heading-actions .ghost-button{width:40px;padding:0}.heading-actions .ghost-button svg{margin:0}.heading-actions .ghost-button{font-size:0}.daily-radar-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.monthly-radar-grid{grid-template-columns:1fr}
   .battle-heading{display:block}.battle-heading h1{font-size:30px}.battle-turn{margin-top:12px;width:max-content}.battle-hud span{font-size:7px;letter-spacing:.05em}.battle-hud > div{padding-inline:9px;gap:6px}.battle-legend h2{font-size:15px}.battle-map-caption{font-size:6px}
 }
+
+/* Quest Board */
+.quest-board-page { min-height: 100vh; background: #E8E1D0; padding: 0; }
+.quest-board-container { max-width: 1400px; margin: 0 auto; padding: 32px 24px 48px; }
+
+.quest-board-header { text-align: center; margin-bottom: 32px; }
+.quest-board-header h1 { font-family: var(--font-fraunces), serif; font-size: clamp(28px, 4vw, 38px); font-weight: 700; color: #2C2C2C; margin: 0 0 6px; letter-spacing: -.015em; }
+.quest-board-subtitle { font-size: 14px; color: #6B6B6B; margin: 0; font-weight: 500; }
+
+.quest-board-columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 32px; }
+
+.quest-column { display: flex; flex-direction: column; }
+.quest-column-header { padding: 12px 16px; border-radius: 8px 8px 0 0; }
+.quest-column-header h2 { margin: 0; font-size: 15px; font-weight: 700; color: white; text-transform: capitalize; letter-spacing: .02em; }
+
+.quest-column-cards { display: flex; flex-direction: column; gap: 10px; }
+
+.quest-card { background: white; border-left: 4px solid; border-radius: 0 6px 6px 0; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); transition: all .2s; }
+.quest-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.12); transform: translateY(-1px); }
+.quest-card-expanded { box-shadow: 0 3px 10px rgba(0,0,0,.15); }
+
+.quest-card-header-section { }
+.quest-card-title { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #2C2C2C; line-height: 1.3; }
+.quest-card-desc { margin: 0 0 8px; font-size: 12px; color: #5B5B5B; line-height: 1.4; }
+.quest-card-date { margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+
+.quest-card-draft { margin-top: 16px; padding-top: 16px; border-top: 1px solid #E8E1D0; }
+.draft-label { display: block; font-size: 11px; font-weight: 700; color: #6B6B6B; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.draft-textarea { width: 100%; padding: 10px 12px; border: 1px solid #D0D0D0; border-radius: 6px; font-family: inherit; font-size: 13px; line-height: 1.5; color: #2C2C2C; resize: vertical; min-height: 120px; }
+.draft-textarea:focus { outline: none; border-color: #5FA573; box-shadow: 0 0 0 3px rgba(95,165,115,.1); }
+.draft-actions { display: flex; gap: 8px; margin-top: 10px; }
+.draft-button { padding: 8px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.draft-button:disabled { opacity: .5; cursor: not-allowed; }
+.draft-button-save { background: #5FA573; color: white; }
+.draft-button-save:hover:not(:disabled) { background: #4D8A5F; }
+.draft-button-copy { background: #E8E1D0; color: #2C2C2C; }
+.draft-button-copy:hover { background: #D4C9B2; }
+.draft-error { margin: 8px 0 0; font-size: 11px; color: #C85A54; }
+
+.quest-card-more { display: flex; align-items: center; justify-content: center; padding: 16px; background: #F8F8F8; cursor: pointer; }
+.quest-card-more:hover { background: #F0F0F0; }
+.quest-card-more-text { margin: 0; font-size: 13px; font-weight: 650; color: #6B6B6B; }
+
+.quest-board-footer { text-align: center; padding-top: 24px; border-top: 1px solid rgba(0,0,0,.08); }
+.quest-board-footer span { font-size: 11px; color: #999; font-weight: 500; letter-spacing: .08em; }
+
+.error-text { color: #C85A54; text-align: center; padding: 32px; font-size: 14px; }
+
+.drafts-container { max-width: 900px; }
+.drafts-auth-form { max-width: 400px; margin: 48px auto; padding: 32px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.drafts-auth-form form { display: flex; flex-direction: column; gap: 12px; }
+.drafts-password-input { padding: 12px 16px; border: 1px solid #D0D0D0; border-radius: 6px; font-size: 14px; }
+.drafts-password-input:focus { outline: none; border-color: #5FA573; box-shadow: 0 0 0 3px rgba(95,165,115,.1); }
+.drafts-loading { text-align: center; padding: 48px; color: #6B6B6B; }
+.drafts-empty { text-align: center; padding: 64px 32px; color: #999; }
+
+.drafts-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+.draft-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.draft-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+.draft-card-header h3 { margin: 0; font-size: 16px; font-weight: 700; color: #2C2C2C; }
+.draft-card-time { font-size: 12px; color: #999; white-space: nowrap; }
+.draft-card-item { margin: 0 0 12px; font-size: 13px; color: #6B6B6B; }
+.draft-card-content { margin: 0; padding: 14px; background: #F8F8F8; border-radius: 6px; font-family: inherit; font-size: 13px; line-height: 1.6; color: #2C2C2C; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
+
+@media (max-width: 1024px) {
+  .quest-board-columns { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .quest-board-container { padding: 24px 18px 40px; }
+}
+
+@media (max-width: 640px) {
+  .quest-board-columns { grid-template-columns: 1fr; gap: 14px; }
+  .quest-board-container { padding: 20px 14px 32px; }
+  .quest-board-header { margin-bottom: 24px; }
+  .quest-column-header { padding: 10px 14px; }
+  .quest-card { padding: 12px 14px; }
+  .quest-card-title { font-size: 13px; }
+  .quest-card-desc { font-size: 11px; }
+}
