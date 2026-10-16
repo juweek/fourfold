@@ -1,0 +1,11 @@
+Program,Institution,Type,Deadline,Status,Priority,Notes
+MS Computer Science,Stanford University,Graduate Program,2027-01-15,preparing,high,Focus on ML research
+Data Science Fellowship,Google Research,Fellowship,2027-02-01,not_started,high,Requires 3 recommendations
+PhD Machine Learning,MIT,Graduate Program,2026-12-01,submitted,high,Interview scheduled
+Software Engineer Internship,Anthropic,Internship,2027-01-10,preparing,medium,AI safety focus
+Research Assistant,UC Berkeley,Research Position,2026-11-20,submitted,medium,Prof. Chen's lab
+Data Analyst,Microsoft,Full-time,2027-02-15,not_started,low,Backup option
+AI Residency Program,OpenAI,Residency,2026-12-15,preparing,high,12-month program
+Graduate Fellowship,NSF GRFP,Fellowship,2026-10-25,completed,high,Submitted successfully
+Summer Research,DeepMind,Internship,2027-01-05,preparing,high,London office
+Teaching Assistant,Stanford CS,TA Position,2026-11-15,completed,low,Confirmed for Winter quarter
