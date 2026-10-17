@@ -185,7 +185,7 @@ class NeonQueryBuilder {
       if (this.query.isDelete) {
         const whereClause = this.buildWhereClause(params);
         const query = `DELETE FROM "${this.query.table}"${whereClause}`;
-        await sql(query, params);
+        await sql.query(query, params);
         resolve({ data: null, error: null });
         return;
       }
@@ -214,7 +214,7 @@ class NeonQueryBuilder {
           query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const rows = await sql(query, params);
+        const rows = await sql.query(query, params);
         const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
@@ -234,7 +234,7 @@ class NeonQueryBuilder {
           query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const rows = await sql(query, params);
+        const rows = await sql.query(query, params);
         const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
@@ -265,7 +265,7 @@ class NeonQueryBuilder {
         query += ` LIMIT ${this.query.limitValue}`;
       }
 
-      const rows = await sql(query, params);
+      const rows = await sql.query(query, params);
       const returnData = this.query.isSingle ? rows[0] : rows;
       resolve({ data: returnData, error: null });
     } catch (error) {
