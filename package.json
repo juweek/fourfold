@@ -16,22 +16,24 @@
     "preview:arena": "node --experimental-strip-types scripts/preview-arena.mjs",
     "sprites:creature-lab": "node generative_art/export-creature-sprites.mjs",
     "sprites:ink-spore": "node generative_art/export-ink-spore.mjs",
-    "test": "node --test --experimental-strip-types tests/*.test.ts"
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "db:setup": "node --experimental-strip-types scripts/db-setup.ts"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.112.1",
+    "@neondatabase/serverless": "^1.2.0",
     "lucide-react": "^0.468.0",
     "next": "16.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "resend": "^4.5.2",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@types/ws": "^8.5.13",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.17",
