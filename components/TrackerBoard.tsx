@@ -217,7 +217,7 @@ export function TrackerBoard() {
   const [showCleared, setShowCleared] = useState(false);
   const [undoToast, setUndoToast] = useState<{ key: string; action: string } | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const columnsRef = { current: null as HTMLDivElement | null };
+  const [columnsEl, setColumnsEl] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     try {
@@ -424,35 +424,28 @@ export function TrackerBoard() {
   const clearedCount = Array.from(itemStatuses.values()).filter(s => s.cleared).length;
 
   function scrollToColumn(index: number) {
-    const container = columnsRef.current;
-    if (!container) return;
+    if (!columnsEl) return;
     
-    const columns = container.children;
+    const columns = columnsEl.children;
     if (columns[index]) {
       columns[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
       setActiveTab(index);
     }
   }
 
-  // Update active tab on scroll (mobile)
-  if (typeof window !== 'undefined') {
-    import('react').then(React => {
-      React.useEffect(() => {
-        const container = columnsRef.current;
-        if (!container || window.innerWidth >= 768) return;
+  useEffect(() => {
+    if (!columnsEl || typeof window === 'undefined' || window.innerWidth >= 768) return;
 
-        const handleScroll = () => {
-          const scrollLeft = container.scrollLeft;
-          const columnWidth = container.scrollWidth / 4;
-          const index = Math.round(scrollLeft / columnWidth);
-          setActiveTab(index);
-        };
+    const handleScroll = () => {
+      const scrollLeft = columnsEl.scrollLeft;
+      const columnWidth = columnsEl.scrollWidth / 4;
+      const index = Math.round(scrollLeft / columnWidth);
+      setActiveTab(index);
+    };
 
-        container.addEventListener('scroll', handleScroll, { passive: true });
-        return () => container.removeEventListener('scroll', handleScroll);
-      }, []);
-    });
-  }
+    columnsEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => columnsEl.removeEventListener('scroll', handleScroll);
+  }, [columnsEl]);
 
   return (
     <main className="page-shell">
@@ -490,7 +483,7 @@ export function TrackerBoard() {
         ))}
       </div>
 
-      <div className="tracker-columns" ref={ref => columnsRef.current = ref}>
+      <div className="tracker-columns" ref={setColumnsEl}>
         {(Object.keys(COLUMN_META) as Column[]).map(columnKey => {
           const meta = COLUMN_META[columnKey];
           const columnItems = columns[columnKey];

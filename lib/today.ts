@@ -10,7 +10,7 @@ import { withTimeout } from "./fetch-utils";
 
 export async function getSettings() {
   try {
-    const result = await withTimeout(
+    const result: any = await withTimeout(
       db().from("settings").select("*").eq("id", 1).single(),
       8000,
       "Database query timeout while fetching settings"
