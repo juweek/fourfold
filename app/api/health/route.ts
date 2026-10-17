@@ -8,12 +8,13 @@ export async function GET() {
     const duration = Date.now() - start;
     
     if (result.error) {
-      console.error("Health check failed:", result.error.message);
+      const errorMsg = result.error.message;
+      console.error("Health check failed:", errorMsg);
       return NextResponse.json(
         { 
           status: "error", 
           database: "unreachable",
-          error: "db_query_failed",
+          error: errorMsg,
           responseTime: duration
         },
         { status: 503 }
@@ -26,12 +27,13 @@ export async function GET() {
       responseTime: duration
     });
   } catch (error) {
-    console.error("Health check exception:", error instanceof Error ? error.message : error);
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    console.error("Health check exception:", errorMsg);
     return NextResponse.json(
       {
         status: "error",
         database: "error",
-        error: "db_connection_failed"
+        error: errorMsg
       },
       { status: 503 }
     );

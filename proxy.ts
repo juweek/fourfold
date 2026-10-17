@@ -14,7 +14,7 @@ async function expectedToken(passcode: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname === "/login" || pathname.startsWith("/api/auth/") || pathname.startsWith("/api/cron/")) {
+  if (pathname === "/login" || pathname.startsWith("/api/auth/") || pathname.startsWith("/api/cron/") || pathname.startsWith("/api/health")) {
     return NextResponse.next();
   }
   const passcode = process.env.APP_PASSCODE;
