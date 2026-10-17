@@ -42,7 +42,10 @@ export function addDays(date: string, amount: number) {
 }
 
 export function daysBetween(from: string, to: string) {
-  return Math.max(0, Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000));
+  const fromMs = Date.parse(`${from}T12:00:00Z`);
+  const toMs = Date.parse(`${to}T12:00:00Z`);
+  if (isNaN(fromMs) || isNaN(toMs)) return 0;
+  return Math.max(0, Math.round((toMs - fromMs) / 86_400_000));
 }
 
 export function startOfWeek(date: string) {

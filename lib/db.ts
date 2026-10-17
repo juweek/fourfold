@@ -1,4 +1,18 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, types } from "@neondatabase/serverless";
+
+// Return dates/timestamps as strings (like Supabase did), not JS Date objects.
+// The app compares and does math on "YYYY-MM-DD" strings everywhere.
+const DATE = 1082, TIMESTAMP = 1114, TIMESTAMPTZ = 1184;
+const TYPES = {
+  getTypeParser: (oid: number, format?: any) => {
+    if (oid === DATE) return (v: string) => v;
+    if (oid === TIMESTAMP || oid === TIMESTAMPTZ) {
+      const parse = types.getTypeParser(oid, format) as (v: string) => Date;
+      return (v: string) => parse(v).toISOString();
+    }
+    return types.getTypeParser(oid, format);
+  },
+};
 
 function cleanDatabaseUrl(rawUrl: string | undefined): string {
   if (!rawUrl) throw new Error("DATABASE_URL environment variable is not set");
@@ -185,7 +199,7 @@ class NeonQueryBuilder {
       if (this.query.isDelete) {
         const whereClause = this.buildWhereClause(params);
         const query = `DELETE FROM "${this.query.table}"${whereClause}`;
-        await sql.query(query, params);
+        await sql.query(query, params, { types: TYPES });
         resolve({ data: null, error: null });
         return;
       }
@@ -214,7 +228,7 @@ class NeonQueryBuilder {
           query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const rows = await sql.query(query, params);
+        const rows = await sql.query(query, params, { types: TYPES });
         const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
@@ -234,7 +248,7 @@ class NeonQueryBuilder {
           query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const rows = await sql.query(query, params);
+        const rows = await sql.query(query, params, { types: TYPES });
         const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
@@ -265,7 +279,7 @@ class NeonQueryBuilder {
         query += ` LIMIT ${this.query.limitValue}`;
       }
 
-      const rows = await sql.query(query, params);
+      const rows = await sql.query(query, params, { types: TYPES });
       const returnData = this.query.isSingle ? rows[0] : rows;
       resolve({ data: returnData, error: null });
     } catch (error) {
