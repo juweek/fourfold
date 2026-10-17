@@ -1,15 +1,33 @@
-import { neonConfig, Pool } from "@neondatabase/serverless";
-import ws from "ws";
+import { neon } from "@neondatabase/serverless";
 
-neonConfig.webSocketConstructor = ws;
+function cleanDatabaseUrl(rawUrl: string | undefined): string {
+  if (!rawUrl) throw new Error("DATABASE_URL environment variable is not set");
+  
+  let url = rawUrl.trim();
+  
+  // Handle accidentally pasted 'DATABASE_URL=' prefix
+  if (url.startsWith("DATABASE_URL=")) {
+    url = url.slice("DATABASE_URL=".length);
+  }
+  
+  // Remove surrounding quotes
+  if ((url.startsWith('"') && url.endsWith('"')) || (url.startsWith("'") && url.endsWith("'"))) {
+    url = url.slice(1, -1);
+  }
+  
+  // Strip channel_binding parameter if present (can cause issues with pooler)
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete("channel_binding");
+    return urlObj.toString();
+  } catch {
+    return url;
+  }
+}
 
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL environment variable is not set");
-  pool ??= new Pool({ connectionString: url });
-  return pool;
+function getSql() {
+  const url = cleanDatabaseUrl(process.env.DATABASE_URL);
+  return neon(url);
 }
 
 type QueryFilter = {
@@ -160,14 +178,14 @@ class NeonQueryBuilder {
   }
 
   async then(resolve: (value: { data: unknown; error: { message: string } | null }) => void, reject: (reason?: unknown) => void) {
-    try {
-      const pool = getPool();
-      const params: unknown[] = [];
+    const sql = getSql() as any;
+    const params: unknown[] = [];
 
+    try {
       if (this.query.isDelete) {
         const whereClause = this.buildWhereClause(params);
-        const sql = `DELETE FROM "${this.query.table}"${whereClause}`;
-        await pool.query(sql, params);
+        const query = `DELETE FROM "${this.query.table}"${whereClause}`;
+        await sql(query, params);
         resolve({ data: null, error: null });
         return;
       }
@@ -190,14 +208,14 @@ class NeonQueryBuilder {
           return `(${values.join(", ")})`;
         });
 
-        let sql = `INSERT INTO "${this.query.table}" (${columns}) VALUES ${valueRows.join(", ")}`;
+        let query = `INSERT INTO "${this.query.table}" (${columns}) VALUES ${valueRows.join(", ")}`;
         
         if (this.query.selectColumns) {
-          sql += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
+          query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const result = await pool.query(sql, params);
-        const returnData = this.query.isSingle ? result.rows[0] : result.rows;
+        const rows = await sql(query, params);
+        const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
       }
@@ -210,23 +228,23 @@ class NeonQueryBuilder {
         }).join(", ");
 
         const whereClause = this.buildWhereClause(params);
-        let sql = `UPDATE "${this.query.table}" SET ${sets}${whereClause}`;
+        let query = `UPDATE "${this.query.table}" SET ${sets}${whereClause}`;
 
         if (this.query.selectColumns) {
-          sql += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
+          query += ` RETURNING ${this.query.selectColumns === "*" ? "*" : this.query.selectColumns}`;
         }
 
-        const result = await pool.query(sql, params);
-        const returnData = this.query.isSingle ? result.rows[0] : result.rows;
+        const rows = await sql(query, params);
+        const returnData = this.query.isSingle ? rows[0] : rows;
         resolve({ data: returnData, error: null });
         return;
       }
 
       const { baseColumns, joinInfo } = this.handleJoinedSelect(this.query.selectColumns || "*");
-      let sql: string;
+      let query: string;
       
       if (joinInfo) {
-        sql = `
+        query = `
           SELECT 
             t.*,
             jsonb_build_object('${joinInfo.column}', j."${joinInfo.column}") as ${joinInfo.table}
@@ -234,24 +252,25 @@ class NeonQueryBuilder {
           LEFT JOIN "${joinInfo.table}" j ON t."${joinInfo.table.slice(0, -1)}_id" = j.id
         `.trim();
       } else {
-        sql = `SELECT ${baseColumns === "*" ? "*" : baseColumns} FROM "${this.query.table}"`;
+        query = `SELECT ${baseColumns === "*" ? "*" : baseColumns} FROM "${this.query.table}"`;
       }
 
-      sql += this.buildWhereClause(params);
+      query += this.buildWhereClause(params);
 
       if (this.query.orderByClause) {
-        sql += ` ORDER BY "${this.query.orderByClause.column}" ${this.query.orderByClause.ascending ? "ASC" : "DESC"}`;
+        query += ` ORDER BY "${this.query.orderByClause.column}" ${this.query.orderByClause.ascending ? "ASC" : "DESC"}`;
       }
 
       if (this.query.limitValue) {
-        sql += ` LIMIT ${this.query.limitValue}`;
+        query += ` LIMIT ${this.query.limitValue}`;
       }
 
-      const result = await pool.query(sql, params);
-      const returnData = this.query.isSingle ? result.rows[0] : result.rows;
+      const rows = await sql(query, params);
+      const returnData = this.query.isSingle ? rows[0] : rows;
       resolve({ data: returnData, error: null });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Database error";
+      console.error("Database query error:", message);
       resolve({ data: null, error: { message } });
     }
   }

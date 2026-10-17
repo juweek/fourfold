@@ -18,8 +18,8 @@ export async function getSettings() {
     assertNoError(result.error);
     return result.data as unknown as Settings;
   } catch (error) {
-    console.error("getSettings error:", error);
-    throw new Error("Failed to fetch settings from database. Check DATABASE_URL and Supabase connection.");
+    console.error("getSettings error:", error instanceof Error ? error.message : error);
+    throw new Error("Failed to fetch settings from database. Check DATABASE_URL and database connection.");
   }
 }
 
@@ -91,7 +91,7 @@ export async function getTodayData() {
       party: DOMAINS.map((domain) => ({ domain, ...DOMAIN_META[domain] })),
     };
   } catch (error) {
-    console.error("getTodayData error:", error);
+    console.error("getTodayData error:", error instanceof Error ? error.message : error);
     throw new Error("Failed to load today's data. Database connection issue or timeout.");
   }
 }

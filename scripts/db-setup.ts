@@ -1,21 +1,38 @@
-import { neonConfig, Pool } from "@neondatabase/serverless";
-import ws from "ws";
+import { neon } from "@neondatabase/serverless";
 
-neonConfig.webSocketConstructor = ws;
-
-async function setupDatabase() {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
+function cleanDatabaseUrl(rawUrl: string | undefined): string {
+  if (!rawUrl) {
     console.error("❌ DATABASE_URL environment variable is not set");
     process.exit(1);
   }
+  
+  let url = rawUrl.trim();
+  
+  if (url.startsWith("DATABASE_URL=")) {
+    url = url.slice("DATABASE_URL=".length);
+  }
+  
+  if ((url.startsWith('"') && url.endsWith('"')) || (url.startsWith("'") && url.endsWith("'"))) {
+    url = url.slice(1, -1);
+  }
+  
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.delete("channel_binding");
+    return urlObj.toString();
+  } catch {
+    return url;
+  }
+}
 
-  const pool = new Pool({ connectionString: url });
+async function setupDatabase() {
+  const url = cleanDatabaseUrl(process.env.DATABASE_URL);
+  const sql = neon(url) as any;
 
   try {
     console.log("🔧 Setting up Fourfold database schema...");
 
-    await pool.query(`
+    await sql(`
       create extension if not exists pgcrypto;
 
       create table if not exists settings (
@@ -92,11 +109,8 @@ async function setupDatabase() {
 
     console.log("✅ Database schema setup complete!");
     console.log("✅ All tables and indexes created (or already existed)");
-    
-    await pool.end();
   } catch (error) {
-    console.error("❌ Database setup failed:", error);
-    await pool.end();
+    console.error("❌ Database setup failed:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
