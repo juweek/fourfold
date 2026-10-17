@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X, ExternalLink, FileText, Undo2, Eye, EyeOff } from "lucide-react";
 
 type TrackerStatus = "Skipped" | "Needs info" | "To do" | "Watching" | "Applied" | "Drafted";
 
@@ -16,6 +17,12 @@ type TrackerItem = {
   link: string;
   file: string;
   notes: string;
+};
+
+type ItemStatus = {
+  status?: string;
+  cleared?: boolean;
+  clearedAt?: string;
 };
 
 const TRACKER_DATA = `item,type,org,status,date_applied,deadline,next_step,owner_action_needed,link,file,notes
@@ -124,15 +131,22 @@ function formatDeadlineShort(deadline: string): string | null {
   });
   
   if (isToday) return "TODAY " + dateStr;
-  if (days === 1) return "Sun " + dateStr;
+  if (days === 1) return "Tomorrow";
   
   return dateStr;
 }
 
 type Column = "due_soon" | "waiting_on_you" | "reach_out" | "waiting_on_them";
 
-function categorizeItem(item: TrackerItem): Column | null {
+function categorizeItem(item: TrackerItem, statusOverride?: string): Column | null {
   if (item.status === "Skipped") return null;
+  
+  // Use override status if present
+  const effectiveStatus = statusOverride || item.status;
+  
+  if (effectiveStatus === "Applied") {
+    return "waiting_on_them";
+  }
   
   const days = daysUntilDeadline(item.deadline);
   const hasDeadline = days < 999;
@@ -141,24 +155,20 @@ function categorizeItem(item: TrackerItem): Column | null {
     return "due_soon";
   }
   
-  if (item.status === "Applied") {
-    return "waiting_on_them";
-  }
-  
   const isNamedContact = item.type.includes("cold outreach") || 
                           item.type.includes("collab") || 
                           item.type.includes("sponsor pitch") ||
-                          (item.type.includes("freelance lead") && item.status === "Drafted");
+                          (item.type.includes("freelance lead") && effectiveStatus === "Drafted");
   
-  if (isNamedContact && item.owner_action_needed === "yes" && item.status === "Drafted") {
+  if (isNamedContact && item.owner_action_needed === "yes" && effectiveStatus === "Drafted") {
     return "reach_out";
   }
   
-  if (item.status === "Needs info" || item.status === "Drafted") {
+  if (effectiveStatus === "Needs info" || effectiveStatus === "Drafted") {
     return "waiting_on_you";
   }
   
-  if (item.status === "To do" && item.owner_action_needed === "yes") {
+  if (effectiveStatus === "To do" && item.owner_action_needed === "yes") {
     return "waiting_on_you";
   }
   
@@ -166,10 +176,30 @@ function categorizeItem(item: TrackerItem): Column | null {
 }
 
 const COLUMN_META = {
-  due_soon: { title: "Due soon", sublabel: "next 14 days", color: "#C85A54", bgColor: "#C85A54" },
-  waiting_on_you: { title: "Waiting on you", sublabel: "drafted/needs info", color: "#D4934A", bgColor: "#D4934A" },
-  reach_out: { title: "Reach out next", sublabel: "named contact", color: "#5FA573", bgColor: "#5FA573" },
-  waiting_on_them: { title: "Waiting on them", sublabel: "applied", color: "#5B7FA5", bgColor: "#5B7FA5" },
+  due_soon: { 
+    title: "Due Soon", 
+    sublabel: "next 14 days", 
+    color: "var(--danger)",
+    sprite: "⏳"
+  },
+  waiting_on_you: { 
+    title: "Waiting On You", 
+    sublabel: "drafted/needs info", 
+    color: "#D9A441",
+    sprite: "📜"
+  },
+  reach_out: { 
+    title: "Reach Out Next", 
+    sublabel: "named contact", 
+    color: "#34C784",
+    sprite: "💬"
+  },
+  waiting_on_them: { 
+    title: "Waiting On Them", 
+    sublabel: "applied", 
+    color: "#8B7CF6",
+    sprite: "📮"
+  },
 };
 
 const MAX_CARDS_PER_COLUMN = 8;
@@ -183,15 +213,37 @@ export function TrackerBoard() {
   const [drafts, setDrafts] = useState<Map<string, string>>(new Map());
   const [draftStates, setDraftStates] = useState<Map<string, DraftState>>(new Map());
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [itemStatuses, setItemStatuses] = useState<Map<string, ItemStatus>>(new Map());
+  const [showCleared, setShowCleared] = useState(false);
+  const [undoToast, setUndoToast] = useState<{ key: string; action: string } | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
+  const columnsRef = { current: null as HTMLDivElement | null };
 
   useEffect(() => {
     try {
       const parsed = parseCsv(TRACKER_DATA);
       setItems(parsed);
+      
+      // Load statuses from localStorage on mount
+      const stored = localStorage.getItem("tracker:statuses");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setItemStatuses(new Map(Object.entries(parsed)));
+        } catch (e) {
+          console.error("Failed to parse stored statuses:", e);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tracker");
     }
   }, []);
+
+  // Save statuses to localStorage whenever they change
+  useEffect(() => {
+    const obj = Object.fromEntries(itemStatuses);
+    localStorage.setItem("tracker:statuses", JSON.stringify(obj));
+  }, [itemStatuses]);
 
   const columns = useMemo(() => {
     const categorized: Record<Column, TrackerItem[]> = {
@@ -202,7 +254,15 @@ export function TrackerBoard() {
     };
     
     items.forEach(item => {
-      const column = categorizeItem(item);
+      const key = getCardKey(item);
+      const itemStatus = itemStatuses.get(key);
+      
+      // Skip cleared items unless showCleared is true
+      if (itemStatus?.cleared && !showCleared) {
+        return;
+      }
+      
+      const column = categorizeItem(item, itemStatus?.status);
       if (column) {
         categorized[column].push(item);
       }
@@ -211,7 +271,7 @@ export function TrackerBoard() {
     categorized.due_soon.sort((a, b) => daysUntilDeadline(a.deadline) - daysUntilDeadline(b.deadline));
     
     return categorized;
-  }, [items]);
+  }, [items, itemStatuses, showCleared]);
 
   const today = new Date().toLocaleDateString("en-US", { 
     weekday: "long",
@@ -305,71 +365,210 @@ export function TrackerBoard() {
     }
   }
 
+  async function updateItemStatus(item: TrackerItem, status?: string, cleared?: boolean) {
+    const key = getCardKey(item);
+    const newStatus: ItemStatus = {
+      status,
+      cleared,
+      clearedAt: cleared ? new Date().toISOString() : undefined,
+    };
+    
+    setItemStatuses(new Map(itemStatuses.set(key, newStatus)));
+    
+    // Try to persist to API, but fall back to localStorage if it fails
+    try {
+      await fetch("/api/tracker-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemKey: key, status, cleared }),
+      });
+    } catch (err) {
+      // Silently fail - localStorage is already updated
+      console.log("KV not available, using localStorage only");
+    }
+  }
+
+  function clearItem(item: TrackerItem) {
+    const key = getCardKey(item);
+    updateItemStatus(item, undefined, true);
+    setUndoToast({ key, action: "cleared" });
+    setTimeout(() => setUndoToast(null), 5000);
+  }
+
+  function moveToWaiting(item: TrackerItem) {
+    const key = getCardKey(item);
+    updateItemStatus(item, "Applied", false);
+    setUndoToast({ key, action: "moved" });
+    setTimeout(() => setUndoToast(null), 5000);
+  }
+
+  function undoAction() {
+    if (!undoToast) return;
+    
+    const newStatuses = new Map(itemStatuses);
+    newStatuses.delete(undoToast.key);
+    setItemStatuses(newStatuses);
+    setUndoToast(null);
+  }
+
   if (error) {
     return (
-      <main className="quest-board-page">
-        <div className="quest-board-container">
-          <p className="error-text">{error}</p>
+      <main className="page-shell">
+        <div className="card" style={{ padding: "32px", textAlign: "center" }}>
+          <p style={{ color: "var(--danger)" }}>{error}</p>
         </div>
       </main>
     );
   }
 
-  return (
-    <main className="quest-board-page">
-      <div className="quest-board-container">
-        <header className="quest-board-header">
-          <h1>Juweek&apos;s Quest Board</h1>
-          <p className="quest-board-subtitle">Open quests as of {today}</p>
-        </header>
+  const clearedCount = Array.from(itemStatuses.values()).filter(s => s.cleared).length;
 
-        <div className="quest-board-columns">
-          {(Object.keys(COLUMN_META) as Column[]).map(columnKey => {
-            const meta = COLUMN_META[columnKey];
-            const columnItems = columns[columnKey];
-            const visibleItems = columnItems.slice(0, MAX_CARDS_PER_COLUMN);
-            const overflowCount = columnItems.length - MAX_CARDS_PER_COLUMN;
-            
-            return (
-              <div key={columnKey} className="quest-column">
-                <div 
-                  className="quest-column-header" 
-                  style={{ backgroundColor: meta.bgColor }}
-                >
-                  <h2>{meta.title} ({columnItems.length})</h2>
-                  <p className="quest-column-sublabel">{meta.sublabel}</p>
+  function scrollToColumn(index: number) {
+    const container = columnsRef.current;
+    if (!container) return;
+    
+    const columns = container.children;
+    if (columns[index]) {
+      columns[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      setActiveTab(index);
+    }
+  }
+
+  // Update active tab on scroll (mobile)
+  if (typeof window !== 'undefined') {
+    import('react').then(React => {
+      React.useEffect(() => {
+        const container = columnsRef.current;
+        if (!container || window.innerWidth >= 768) return;
+
+        const handleScroll = () => {
+          const scrollLeft = container.scrollLeft;
+          const columnWidth = container.scrollWidth / 4;
+          const index = Math.round(scrollLeft / columnWidth);
+          setActiveTab(index);
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+      }, []);
+    });
+  }
+
+  return (
+    <main className="page-shell">
+      <div className="tracker-header">
+        <div>
+          <span className="eyebrow">Application Quest Log</span>
+          <h1>Juweek&apos;s Tracker</h1>
+          <p className="tracker-subtitle">Open quests as of {today}</p>
+        </div>
+        <div className="tracker-moss">
+          <img src="/battle/heroes/moss-squirrel-pixel.png" alt="Moss" />
+        </div>
+      </div>
+
+      <div className="tracker-controls">
+        {clearedCount > 0 && (
+          <button 
+            className="ghost-button compact"
+            onClick={() => setShowCleared(!showCleared)}
+          >
+            {showCleared ? <EyeOff size={14} /> : <Eye size={14} />}
+            {showCleared ? "Hide" : "Show"} cleared ({clearedCount})
+          </button>
+        )}
+      </div>
+
+      <div className="tracker-tabs">
+        {Object.keys(COLUMN_META).map((_, index) => (
+          <button
+            key={index}
+            className={`tracker-tab ${activeTab === index ? 'active' : ''}`}
+            onClick={() => scrollToColumn(index)}
+            aria-label={`Go to column ${index + 1}`}
+          />
+        ))}
+      </div>
+
+      <div className="tracker-columns" ref={ref => columnsRef.current = ref}>
+        {(Object.keys(COLUMN_META) as Column[]).map(columnKey => {
+          const meta = COLUMN_META[columnKey];
+          const columnItems = columns[columnKey];
+          const visibleItems = columnItems.slice(0, MAX_CARDS_PER_COLUMN);
+          const overflowCount = columnItems.length - MAX_CARDS_PER_COLUMN;
+          
+          return (
+            <div key={columnKey} className="tracker-column">
+              <div className="tracker-column-header" style={{ borderColor: meta.color }}>
+                <div className="tracker-column-icon">{meta.sprite}</div>
+                <div className="tracker-column-titles">
+                  <h2 style={{ color: meta.color }}>
+                    {meta.title} <span className="tracker-count">({columnItems.length})</span>
+                  </h2>
+                  <p className="tracker-column-sublabel">{meta.sublabel}</p>
                 </div>
-                <div className="quest-column-cards">
-                  {visibleItems.map((item, idx) => {
-                    const deadlineStr = formatDeadlineShort(item.deadline);
-                    const cardKey = getCardKey(item);
-                    const isExpanded = expandedCard === cardKey;
-                    const draftText = getDraftText(item);
-                    const draftState = getDraftState(item);
-                    const copied = copySuccess === cardKey;
-                    
-                    return (
+              </div>
+              <div className="tracker-column-cards">
+                {visibleItems.map((item, idx) => {
+                  const deadlineStr = formatDeadlineShort(item.deadline);
+                  const cardKey = getCardKey(item);
+                  const isExpanded = expandedCard === cardKey;
+                  const draftText = getDraftText(item);
+                  const draftState = getDraftState(item);
+                  const copied = copySuccess === cardKey;
+                  const itemStatus = itemStatuses.get(cardKey);
+                  const isCleared = itemStatus?.cleared;
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`tracker-card ${isExpanded ? 'tracker-card-expanded' : ''} ${isCleared ? 'tracker-card-cleared' : ''}`}
+                      style={{ borderLeftColor: meta.color }}
+                    >
                       <div 
-                        key={idx} 
-                        className={`quest-card ${isExpanded ? 'quest-card-expanded' : ''}`}
-                        style={{ borderLeftColor: meta.color }}
+                        className="tracker-card-header"
+                        onClick={() => toggleCard(item)}
+                        style={{ cursor: 'pointer' }}
                       >
-                        <div 
-                          className="quest-card-header-section"
-                          onClick={() => toggleCard(item)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <h3 className="quest-card-title">{item.org}</h3>
-                          <p className="quest-card-desc">{item.next_step || item.type}</p>
+                        <div>
+                          <h3 className="tracker-card-title">{item.org}</h3>
+                          <p className="tracker-card-desc">{item.next_step || item.type}</p>
                           {deadlineStr && (
-                            <p className="quest-card-date" style={{ color: meta.color }}>
+                            <p className="tracker-card-date" style={{ color: meta.color }}>
                               {deadlineStr}
                             </p>
                           )}
                         </div>
-                        
-                        {isExpanded && (
-                          <div className="quest-card-draft">
+                        {item.link && (
+                          <a 
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="tracker-card-link"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Open link"
+                          >
+                            <ExternalLink size={14} />
+                          </a>
+                        )}
+                      </div>
+                      
+                      {isExpanded && (
+                        <div className="tracker-card-expanded-content">
+                          {item.file && (
+                            <div className="tracker-card-meta">
+                              <FileText size={12} />
+                              <span>{item.file}</span>
+                            </div>
+                          )}
+                          {item.notes && (
+                            <div className="tracker-card-notes">
+                              <strong>Notes:</strong>
+                              <p>{item.notes}</p>
+                            </div>
+                          )}
+                          
+                          <div className="tracker-card-draft">
                             <label className="draft-label">Draft email</label>
                             <textarea
                               className="draft-textarea"
@@ -380,7 +579,7 @@ export function TrackerBoard() {
                             />
                             <div className="draft-actions">
                               <button
-                                className="draft-button draft-button-save"
+                                className="primary-button compact"
                                 onClick={() => saveDraft(item)}
                                 disabled={draftState === "loading"}
                               >
@@ -390,7 +589,7 @@ export function TrackerBoard() {
                                 {draftState === "empty" && "Save"}
                               </button>
                               <button
-                                className="draft-button draft-button-copy"
+                                className="ghost-button compact"
                                 onClick={() => copyDraft(item)}
                               >
                                 {copied ? "✓ Copied" : "Copy draft"}
@@ -402,25 +601,49 @@ export function TrackerBoard() {
                               </p>
                             )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {overflowCount > 0 && (
-                    <div className="quest-card quest-card-more" style={{ borderLeftColor: meta.color }}>
-                      <p className="quest-card-more-text">+ {overflowCount} more</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        <footer className="quest-board-footer">
-          <span>gourmetdata</span>
-        </footer>
+                          <div className="tracker-card-actions">
+                            <button
+                              className="tracker-action-btn tracker-action-clear"
+                              onClick={() => clearItem(item)}
+                              title="Mark as done and hide"
+                            >
+                              <X size={14} />
+                              Clear
+                            </button>
+                            <button
+                              className="tracker-action-btn tracker-action-move"
+                              onClick={() => moveToWaiting(item)}
+                              title="Move to Waiting on them"
+                            >
+                              📮 Move to Waiting
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {overflowCount > 0 && (
+                  <div className="tracker-card tracker-card-more" style={{ borderLeftColor: meta.color }}>
+                    <p className="tracker-card-more-text">+ {overflowCount} more</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {undoToast && (
+        <div className="tracker-toast">
+          <span>Quest {undoToast.action}</span>
+          <button className="ghost-button compact" onClick={undoAction}>
+            <Undo2 size={14} />
+            Undo
+          </button>
+        </div>
+      )}
     </main>
   );
 }

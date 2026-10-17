@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchWithRetry } from "@/lib/fetch-utils";
 
 type DraftEntry = {
   item: string;
@@ -9,47 +10,54 @@ type DraftEntry = {
 
 let kv: any = null;
 let kvError: string | null = null;
+let kvConfigured: boolean | null = null;
+
+function isKVConfigured(): boolean {
+  if (kvConfigured !== null) return kvConfigured;
+  kvConfigured = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return kvConfigured;
+}
 
 function getKV() {
   if (kv !== null) return kv;
-  if (kvError !== null) throw new Error(kvError);
+  if (kvError !== null) return null;
   
   try {
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
     
     if (!url || !token) {
-      kvError = "KV_REST_API_URL and KV_REST_API_TOKEN environment variables are required";
-      throw new Error(kvError);
+      kvError = "KV not configured";
+      return null;
     }
     
     kv = {
       url,
       token,
       async set(key: string, value: any) {
-        const response = await fetch(`${url}/set/${encodeURIComponent(key)}`, {
+        const response = await fetchWithRetry(`${url}/set/${encodeURIComponent(key)}`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(value),
-        });
+        }, { retries: 2, timeoutMs: 8000 });
         if (!response.ok) throw new Error("KV set failed");
         return response.json();
       },
       async get(key: string) {
-        const response = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
+        const response = await fetchWithRetry(`${url}/get/${encodeURIComponent(key)}`, {
           headers: { "Authorization": `Bearer ${token}` },
-        });
+        }, { retries: 2, timeoutMs: 8000 });
         if (!response.ok) return null;
         const data = await response.json();
         return data.result;
       },
       async keys(pattern: string) {
-        const response = await fetch(`${url}/keys/${encodeURIComponent(pattern)}`, {
+        const response = await fetchWithRetry(`${url}/keys/${encodeURIComponent(pattern)}`, {
           headers: { "Authorization": `Bearer ${token}` },
-        });
+        }, { retries: 2, timeoutMs: 8000 });
         if (!response.ok) return [];
         const data = await response.json();
         return data.result || [];
@@ -59,7 +67,8 @@ function getKV() {
     return kv;
   } catch (error) {
     kvError = error instanceof Error ? error.message : "Failed to initialize KV";
-    throw new Error(kvError);
+    console.error("KV initialization error:", error);
+    return null;
   }
 }
 
@@ -108,7 +117,21 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    if (!isKVConfigured()) {
+      return NextResponse.json(
+        { error: "KV storage not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN environment variables." },
+        { status: 503 }
+      );
+    }
+    
     const store = getKV();
+    if (!store) {
+      return NextResponse.json(
+        { error: "KV storage unavailable" },
+        { status: 503 }
+      );
+    }
+    
     const key = `draft:${org}:${item}`;
     const entry: DraftEntry = {
       item,
@@ -121,9 +144,10 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json({ success: true, key });
   } catch (error) {
+    console.error("Draft save error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to save draft" },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }
@@ -137,7 +161,15 @@ export async function GET(req: NextRequest) {
   }
   
   try {
+    if (!isKVConfigured()) {
+      return NextResponse.json({ drafts: [] });
+    }
+    
     const store = getKV();
+    if (!store) {
+      return NextResponse.json({ drafts: [] });
+    }
+    
     const keys = await store.keys("draft:*");
     
     const drafts: DraftEntry[] = [];
@@ -152,9 +184,10 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json({ drafts });
   } catch (error) {
+    console.error("Draft fetch error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch drafts" },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }
