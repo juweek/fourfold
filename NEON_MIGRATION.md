@@ -1,85 +1,59 @@
 # Neon Postgres Migration
 
-This document explains the changes made to migrate from Supabase to Neon Postgres.
+This document provides setup instructions for migrating from Supabase to Neon Postgres.
 
-## What Changed
+## Environment Variables
 
-### Dependencies
-- **Removed**: `@supabase/ssr`, `@supabase/supabase-js`
-- **Added**: `@neondatabase/serverless`, `ws`, `@types/ws`
+### Required
+- `DATABASE_URL` - Neon Postgres pooled connection string
 
-### Database Connection
-The app now connects directly to Postgres via `DATABASE_URL` instead of using Supabase client libraries.
+### Remove from Vercel
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_DB_PASSWORD`
 
-### Code Changes
-- `lib/db.ts`: Replaced Supabase client with a lightweight query builder wrapper around the Neon serverless driver
-- The query builder maintains API compatibility with Supabase's query syntax, minimizing changes to existing code
-
-### Environment Variables
-- **Required**: `DATABASE_URL` (Neon Postgres pooled connection string)
-- **Removed**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_PASSWORD`
+### Keep Unchanged
+- `RESEND_API_KEY`
+- `APP_PASSCODE`
+- `CRON_SECRET`
+- `APP_URL`
 
 ## Database Setup
 
-Before deploying or running the app, you must set up the database schema.
+Before deploying, initialize the database schema.
 
-### Local Development
+### Method 1: Setup Script (Recommended)
+
 ```bash
-# Set your DATABASE_URL environment variable
+# Set your DATABASE_URL
 export DATABASE_URL="postgresql://..."
 
-# Run the setup script
+# Install dependencies and run setup
+npm install
 npm run db:setup
 ```
 
-### Production (Neon)
-Run the setup script once after creating your Neon database:
-```bash
-DATABASE_URL="your-neon-connection-string" npm run db:setup
-```
+### Method 2: Manual SQL
 
-Or manually execute the schema from `supabase/schema.sql` in your Neon SQL editor.
+Execute the schema from `db/schema.sql` in your Neon SQL editor.
 
-## What Replaces Supabase Features
+The schema is idempotent and safe to run multiple times.
 
-### Database Access
-- **Before**: Supabase JS client with query builder
-- **After**: Neon serverless driver with compatible query builder wrapper
+## Deployment Steps
 
-### Authentication & RLS
-The app never used Supabase auth or Row Level Security (RLS). Authentication is handled via:
-- `APP_PASSCODE` environment variable
-- Simple passcode verification in `lib/auth.ts`
-- Cookie-based session management
-
-This authentication mechanism is unchanged.
-
-### Timeouts & Retries
-All existing timeout and retry behavior from `lib/fetch-utils.ts` and `lib/today.ts` is preserved.
-
-## Vercel Deployment
-
-1. Set the `DATABASE_URL` environment variable in Vercel project settings
-2. Delete old Supabase variables: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_PASSWORD`
-3. Ensure other required variables are set: `RESEND_API_KEY`, `APP_PASSCODE`, `CRON_SECRET`, `APP_URL`
+1. Set `DATABASE_URL` in Vercel project settings
+2. Delete old Supabase variables (listed above)
+3. Run database setup (either method)
 4. Deploy the branch
-5. **Important**: Run `npm run db:setup` once (via Vercel CLI or a one-time deployment script) to initialize the schema
-
-## Testing
-
-The migration maintains backward compatibility with the existing API. All routes should work identically:
-- `/api/today` - Get today's tasks and progress
-- `/api/settings` - Get/update settings
-- `/api/tasks` - CRUD operations on tasks
-- All other existing endpoints
+5. Test all API routes
 
 ## Troubleshooting
 
-### "DATABASE_URL environment variable is not set"
-Ensure `DATABASE_URL` is configured in your environment variables.
+**"DATABASE_URL environment variable is not set"**  
+Configure DATABASE_URL in your environment.
 
-### Connection errors
-Verify your Neon connection string is correct and includes the pooler endpoint (e.g., `...-pooler...neon.tech`).
+**Connection errors**  
+Verify your connection string includes the pooler endpoint (contains `-pooler...neon.tech`).
 
-### Missing tables
+**Missing tables**  
 Run `npm run db:setup` to create the schema.
